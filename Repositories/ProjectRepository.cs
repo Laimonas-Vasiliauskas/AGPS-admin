@@ -1,6 +1,7 @@
 ﻿using AGPSadmin.Models;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
@@ -158,11 +159,13 @@ namespace AGPSadmin.Repositories
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
-                    string sql = "DELETE FROM projects WHERE id = @id";
-                    using (SqlCommand command = new SqlCommand(sql, connection))
                     {
-                        command.Parameters.AddWithValue("@id", id);
-                        command.ExecuteNonQuery();
+                        string sql = "DELETE FROM projects WHERE id = @id";
+                        using (SqlCommand command = new SqlCommand(sql, connection))
+                        {
+                            command.Parameters.AddWithValue("@id", id);
+                            command.ExecuteNonQuery();
+                        }
                     }
                 }
             }
@@ -171,5 +174,48 @@ namespace AGPSadmin.Repositories
                 Console.WriteLine("An error occurred while deleting project: " + ex.Message);
             }
         }
+        public List<string> GetProjectNames()
+        {
+            var result = new List<string>();
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                string sql = "SELECT projectname FROM projects";
+
+                using (SqlCommand cmd = new SqlCommand(sql, connection))
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                        result.Add(reader["projectname"].ToString());
+                }
+            }
+
+            return result;
+        }
+        public DataTable GetProjectTable(string projectName)
+        {
+            DataTable table = new DataTable();
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                string sql = "SELECT * FROM projects WHERE projectname = @name";
+
+                using (SqlCommand cmd = new SqlCommand(sql, connection))
+                {
+                    cmd.Parameters.AddWithValue("@name", projectName);
+
+                    using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                    {
+                        da.Fill(table);
+                    }
+                }
+            }
+
+            return table;
+        }
+
     }
 }

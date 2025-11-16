@@ -1,4 +1,5 @@
 ﻿using AGPSadmin;
+using AGPSadmin.Models;
 using AGPSadmin.Repositories;
 using System;
 using System.Data;
@@ -98,8 +99,30 @@ namespace AdminApp
             Form2 form = new Form2();
             if (form.ShowDialog() == DialogResult.OK)
             {
-                ReadProjects();
+                LoadProjects();
             }
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string selected = comboBox1.SelectedItem.ToString();
+
+            ProjectRepository repo = new ProjectRepository();
+            DataTable dt = repo.GetProjectTable(selected);
+
+            dataGridView1.DataSource = dt;
+        }
+        private void LoadProjects()
+        {
+            ProjectRepository repo = new ProjectRepository();
+            var names = repo.GetProjectNames();
+
+            comboBox1.Items.Clear();
+            comboBox1.Items.AddRange(names.ToArray());
+        }
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            LoadProjects();
         }
     }
 }
