@@ -8,20 +8,23 @@ IF NOT EXISTS (
     AND type in (N'U')
 )
 BEGIN
-    CREATE TABLE [dbo].[Projects] (
-        [id] INT IDENTITY(1,1) NOT NULL,
-        [project_number] VARCHAR(50) NOT NULL,
-        [comments] VARCHAR(255) NOT NULL,
-        [ischecked] BIT NOT NULL DEFAULT (0),
-        [created_at] DATETIME NOT NULL DEFAULT (GETDATE()),
-        CONSTRAINT [PK_Projects] PRIMARY KEY CLUSTERED ([id] ASC)
-    );
+    CREATE TABLE [dbo].[projects] (
+    [id]          INT           IDENTITY (1, 1) NOT NULL,
+    [projectname] VARCHAR (100) NOT NULL,
+    [partname]    VARCHAR (100) NOT NULL,
+    [madeby]      VARCHAR (100) NOT NULL,
+    [typeofwork]  VARCHAR (100) NOT NULL,
+    [created_at]  DATETIME      DEFAULT (getdate()) NOT NULL,
+    [comments]    VARCHAR (255) NOT NULL,
+    [ischecked]   VARCHAR (5)   DEFAULT ('No') NOT NULL,
+    PRIMARY KEY CLUSTERED ([id] ASC)
+);
 END
 GO
 
 -- Optional demo data (remove if not needed)
-INSERT INTO [dbo].[Projects] ([project_number], [comments], [ischecked])
+INSERT INTO [dbo].[projects] ([projectname], [partname], [madeby], [typeofwork], [comments], [ischecked])
 VALUES 
-('P-001', 'Demo project', 0),
-('P-002', 'Test project', 1);
+('P-001', 'Part A', 'User1', 'Type1', 'Demo project', 'No'),
+('P-002', 'Part B', 'User2', 'Type2', 'Test project', 'Yes');
 GO
