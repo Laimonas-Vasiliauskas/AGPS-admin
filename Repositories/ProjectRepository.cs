@@ -170,20 +170,24 @@ namespace AGPSadmin.Repositories
             }
         }
 
-        public List<string> GetProjectNames()
+        public List<string> GetProjectNames(string projectName)
         {
             var result = new List<string>();
 
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 connection.Open();
-                string sql = "SELECT projectname FROM projects";
+                string sql = "SELECT projectname FROM projects WHERE (@projectname IS NULL OR @projectname = '') OR projectname LIKE '%' + @projectname + '%';";
 
                 using (SqlCommand cmd = new SqlCommand(sql, connection))
-                using (SqlDataReader reader = cmd.ExecuteReader())
                 {
-                    while (reader.Read())
-                        result.Add(reader["projectname"].ToString());
+                    cmd.Parameters.AddWithValue("@projectname", projectName);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                            result.Add(reader["projectname"].ToString());
+                    }
                 }
             }
 
@@ -198,11 +202,11 @@ namespace AGPSadmin.Repositories
             {
                 connection.Open();
 
-                string sql = "SELECT * FROM projects WHERE projectname = @name";
+                string sql = "SELECT * FROM projects WHERE (@projectname IS NULL OR @projectname = '') OR projectname = @projectname";
 
                 using (SqlCommand cmd = new SqlCommand(sql, connection))
                 {
-                    cmd.Parameters.AddWithValue("@name", projectName);
+                    cmd.Parameters.AddWithValue("@projectname", projectName);
 
                     using (SqlDataAdapter da = new SqlDataAdapter(cmd))
                     {

@@ -16,6 +16,7 @@ namespace AdminApp
 {
     public partial class Form1 : Form
     {
+        private bool _isUpdating;
         public Form1()
         {
             InitializeComponent();
@@ -157,7 +158,7 @@ namespace AdminApp
         private void LoadProjects()
         {
             ProjectRepository repo = new ProjectRepository();
-            var names = repo.GetProjectNames();
+            var names = repo.GetProjectNames("");
 
             comboBox1.Items.Clear();
             comboBox1.Items.AddRange(names.ToArray());
@@ -167,5 +168,45 @@ namespace AdminApp
         {
             LoadProjects();
         }
+
+        private void comboBox1_TextUpdate(object sender, EventArgs e)
+        {
+            ProjectRepository repo = new ProjectRepository();
+            if (string.IsNullOrEmpty(comboBox1.Text))
+            {
+                DataTable dt = repo.GetProjectTable("");
+
+                dataGridView1.DataSource = dt;
+            }
+            else
+            {
+                if (_isUpdating)
+                    return;
+
+                _isUpdating = true;
+
+                string text = comboBox1.Text;
+                int caret = comboBox1.SelectionStart;
+
+               
+                var names = repo.GetProjectNames(text);
+
+                comboBox1.BeginUpdate();
+
+                comboBox1.Items.Clear();
+                comboBox1.Items.AddRange(names.ToArray());
+
+                comboBox1.DroppedDown = true;
+
+                comboBox1.EndUpdate();
+
+                comboBox1.Text = text;
+                comboBox1.SelectionStart = caret;
+                comboBox1.SelectionLength = 0;
+
+                _isUpdating = false;
+            }
+        }
+
     }
 }
