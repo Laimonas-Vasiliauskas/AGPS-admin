@@ -33,7 +33,7 @@ namespace AGPSadmin
             this.textBox3.Text = project.madeby;
             this.textBox4.Text = project.typeofwork;
             this.textBox5.Text = project.comments;
-            this.textBox6.Text = project.isChecked;
+            this.radioButton1.Text = project.isChecked;
 
             this.projectId = project.id;
         }
@@ -52,7 +52,7 @@ namespace AGPSadmin
             project.madeby = this.textBox3.Text;
             project.typeofwork = this.textBox4.Text;
             project.comments = this.textBox5.Text;
-            project.isChecked = this.textBox6.Text;
+            project.isChecked = this.radioButton1.Text;
 
             var repo = new ProjectRepository();
 
