@@ -55,12 +55,29 @@ namespace AdminApp
         }
         private void button3_Click(object sender, EventArgs e)
         {
+            if (this.dataGridView1.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Please select a project to edit.");
+                return;
+            }
+
+            DataGridViewRow row = dataGridView1.SelectedRows[0];
+            if (row.IsNewRow)
+            {
+                MessageBox.Show("Cannot edit an empty row.");
+                return;
+            }
             var value = this.dataGridView1.SelectedRows[0].Cells[0].Value.ToString();
             if(value == null || value.Length == 0)
             {
+                MessageBox.Show("Selected project ID is invalid.");
                 return;
             }
-            int projectid = int.Parse(value);
+            if (!int.TryParse(value, out int projectid))
+            {
+                MessageBox.Show("Selected project ID is not a valid number.");
+                return;
+            }
 
             var repo = new ProjectRepository();
             var project = repo.GetProject(projectid);
@@ -77,22 +94,40 @@ namespace AdminApp
 
         private void button2_Click(object sender, EventArgs e)
         {
-            var value = this.dataGridView1.SelectedRows[0].Cells[0].Value.ToString();
-            if (value == null || value.Length == 0)
-            {
-                return;
-            }
-            int projectid = int.Parse(value);
+            
+                if (this.dataGridView1.SelectedRows.Count == 0)
+                {
+                    MessageBox.Show("Please select a project to delete.");
+                    return;
+                }
+                DataGridViewRow row = dataGridView1.SelectedRows[0];
+                if (row.IsNewRow)
+                {
+                    MessageBox.Show("Cannot delete an empty row.");
+                    return;
+                }
+                var value = this.dataGridView1.SelectedRows[0].Cells[0].Value.ToString();
+                if (value == null || value.Length == 0 )
+                {
+                    MessageBox.Show("Selected project ID is invalid.");
+                    return;
+                }
+                if (!int.TryParse(value, out int projectid))
+                {
+                    MessageBox.Show("Selected project ID is not a valid number.");
+                    return;
+                }
 
             DialogResult dialogResult = MessageBox.Show("Are you sure you want to delete this project?", "Confirm Deletion", MessageBoxButtons.YesNo);
-            if (dialogResult == DialogResult.Yes)
-            {
-                var repo = new ProjectRepository();
-                repo.DeleteProject(projectid);
-                ReadProjects();
-            }
+                if (dialogResult == DialogResult.Yes)
+                {
+                    var repo = new ProjectRepository();
+                    repo.DeleteProject(projectid);
+                    ReadProjects();
+                }
+            
+            
         }
-
         private void button1_Click(object sender, EventArgs e)
         {
             Form2 form = new Form2();
