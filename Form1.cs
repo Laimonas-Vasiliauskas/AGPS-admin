@@ -11,7 +11,6 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace AdminApp
 {
@@ -22,6 +21,7 @@ namespace AdminApp
             InitializeComponent();
             ReadProjects();
         }
+
         private void ReadProjects()
         {
             DataTable dataTable = new DataTable();
@@ -35,7 +35,7 @@ namespace AdminApp
             dataTable.Columns.Add("Comments");
             dataTable.Columns.Add("Is Checked");
 
-            var repo = new AGPSadmin.Repositories.ProjectRepository();
+            var repo = new ProjectRepository();
             var projects = repo.GetProjects();
 
             foreach (var project in projects)
@@ -54,6 +54,7 @@ namespace AdminApp
 
             this.dataGridView1.DataSource = dataTable;
         }
+
         private void button3_Click(object sender, EventArgs e)
         {
             if (this.dataGridView1.SelectedRows.Count == 0)
@@ -69,9 +70,9 @@ namespace AdminApp
                 return;
             }
 
-            var value = this.dataGridView1.SelectedRows[0].Cells[0].Value.ToString();
+            var value = row.Cells[0].Value?.ToString();
 
-            if(value == null || value.Length == 0)
+            if (string.IsNullOrWhiteSpace(value))
             {
                 MessageBox.Show("Selected project ID is invalid.");
                 return;
@@ -111,9 +112,9 @@ namespace AdminApp
                 return;
             }
 
-            var value = this.dataGridView1.SelectedRows[0].Cells[0].Value.ToString();
+            var value = row.Cells[0].Value?.ToString();
 
-            if (value == null || value.Length == 0)
+            if (string.IsNullOrWhiteSpace(value))
             {
                 MessageBox.Show("Selected project ID is invalid.");
                 return;
@@ -152,6 +153,7 @@ namespace AdminApp
 
             dataGridView1.DataSource = dt;
         }
+
         private void LoadProjects()
         {
             ProjectRepository repo = new ProjectRepository();
@@ -160,6 +162,7 @@ namespace AdminApp
             comboBox1.Items.Clear();
             comboBox1.Items.AddRange(names.ToArray());
         }
+
         private void Form1_Load(object sender, EventArgs e)
         {
             LoadProjects();

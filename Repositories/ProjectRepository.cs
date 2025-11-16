@@ -3,19 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.Drawing;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AGPSadmin.Repositories
 {
     public class ProjectRepository
     {
-        private readonly string connectionString = "Data Source=localhost\\SQLEXPRESS;Initial Catalog=AGPSadmin;Integrated Security=True;";
+        private readonly string connectionString = "Data Source=localhost\\SQLEXPRESS;Initial Catalog=AGPSdb;Integrated Security=True;";
 
-        public List<Project> GetProjects() 
+        public List<Project> GetProjects()
         {
             var projects = new List<Project>();
 
@@ -27,35 +22,31 @@ namespace AGPSadmin.Repositories
 
                     string sql = "SELECT * From projects ORDER BY id DESC";
                     using (SqlCommand command = new SqlCommand(sql, connection))
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
-                        using (SqlDataReader reader = command.ExecuteReader())
+                        while (reader.Read())
                         {
-                            while (reader.Read())
-                            {
-                                Project project = new Project();
+                            Project project = new Project();
 
-                                project.id = Convert.ToInt32(reader["id"]);
-                                project.projectname = Convert.ToString(reader["projectname"]);
-                                project.partname = Convert.ToString(reader["partname"]);
-                                project.madeby = Convert.ToString(reader["madeby"]);
-                                project.typeofwork = Convert.ToString(reader["typeofwork"]);
-                                project.created_at = Convert.ToString(reader["created_at"]);
-                                project.comments = Convert.ToString(reader["comments"]);
-                                project.isChecked = Convert.ToString(reader["isChecked"]);
+                            project.id = Convert.ToInt32(reader["id"]);
+                            project.projectname = Convert.ToString(reader["projectname"]);
+                            project.partname = Convert.ToString(reader["partname"]);
+                            project.madeby = Convert.ToString(reader["madeby"]);
+                            project.typeofwork = Convert.ToString(reader["typeofwork"]);
+                            project.created_at = Convert.ToString(reader["created_at"]);
+                            project.comments = Convert.ToString(reader["comments"]);
+                            project.isChecked = Convert.ToString(reader["isChecked"]);
 
-                                projects.Add(project);
-                            }
-
+                            projects.Add(project);
                         }
                     }
-
                 }
             }
             catch (Exception ex)
             {
-                // Handle exceptions (e.g., log the error)
                 Console.WriteLine("An error occurred while retrieving projects: " + ex.Message);
             }
+
             return projects;
         }
 
@@ -95,6 +86,7 @@ namespace AGPSadmin.Repositories
             {
                 Console.WriteLine("An error occurred while retrieving project: " + ex.Message);
             }
+
             return null;
         }
 
@@ -107,6 +99,7 @@ namespace AGPSadmin.Repositories
                     connection.Open();
                     string sql = "INSERT INTO projects (projectname, partname, madeby, typeofwork, created_at, comments, isChecked) " +
                                  "VALUES (@projectname, @partname, @madeby, @typeofwork, @created_at, @comments, @isChecked)";
+
                     using (SqlCommand command = new SqlCommand(sql, connection))
                     {
                         command.Parameters.AddWithValue("@projectname", project.projectname);
@@ -125,6 +118,7 @@ namespace AGPSadmin.Repositories
                 Console.WriteLine("An error occurred while adding project: " + ex.Message);
             }
         }
+
         public void UpdateProject(Project project)
         {
             try
@@ -134,6 +128,7 @@ namespace AGPSadmin.Repositories
                     connection.Open();
                     string sql = "UPDATE projects SET projectname = @projectname, partname = @partname, madeby = @madeby, " +
                                  "typeofwork = @typeofwork, comments = @comments, isChecked = @isChecked WHERE id = @id";
+
                     using (SqlCommand command = new SqlCommand(sql, connection))
                     {
                         command.Parameters.AddWithValue("@projectname", project.projectname);
@@ -152,6 +147,7 @@ namespace AGPSadmin.Repositories
                 Console.WriteLine("An error occurred while updating project: " + ex.Message);
             }
         }
+
         public void DeleteProject(int id)
         {
             try
@@ -159,13 +155,12 @@ namespace AGPSadmin.Repositories
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
+
+                    string sql = "DELETE FROM projects WHERE id = @id";
+                    using (SqlCommand command = new SqlCommand(sql, connection))
                     {
-                        string sql = "DELETE FROM projects WHERE id = @id";
-                        using (SqlCommand command = new SqlCommand(sql, connection))
-                        {
-                            command.Parameters.AddWithValue("@id", id);
-                            command.ExecuteNonQuery();
-                        }
+                        command.Parameters.AddWithValue("@id", id);
+                        command.ExecuteNonQuery();
                     }
                 }
             }
@@ -174,6 +169,7 @@ namespace AGPSadmin.Repositories
                 Console.WriteLine("An error occurred while deleting project: " + ex.Message);
             }
         }
+
         public List<string> GetProjectNames()
         {
             var result = new List<string>();
@@ -193,6 +189,7 @@ namespace AGPSadmin.Repositories
 
             return result;
         }
+
         public DataTable GetProjectTable(string projectName)
         {
             DataTable table = new DataTable();
@@ -216,6 +213,5 @@ namespace AGPSadmin.Repositories
 
             return table;
         }
-
     }
 }
