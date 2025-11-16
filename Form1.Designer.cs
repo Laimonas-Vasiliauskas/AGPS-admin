@@ -37,6 +37,8 @@
             this.aGPSdbDataSet = new AGPSadmin.AGPSdbDataSet();
             this.aGPSdbDataSetBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.projectsBindingSource = new System.Windows.Forms.BindingSource(this.components);
+            this.comboBox1 = new System.Windows.Forms.ComboBox();
+            this.label2 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.aGPSdbDataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.aGPSdbDataSetBindingSource)).BeginInit();
@@ -59,7 +61,7 @@
             // 
             this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.button1.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button1.Location = new System.Drawing.Point(347, 115);
+            this.button1.Location = new System.Drawing.Point(682, 115);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(144, 29);
             this.button1.TabIndex = 4;
@@ -71,7 +73,7 @@
             // 
             this.button2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.button2.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button2.Location = new System.Drawing.Point(675, 115);
+            this.button2.Location = new System.Drawing.Point(990, 115);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(152, 29);
             this.button2.TabIndex = 5;
@@ -83,7 +85,7 @@
             // 
             this.button3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.button3.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button3.Location = new System.Drawing.Point(507, 115);
+            this.button3.Location = new System.Drawing.Point(832, 115);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(152, 29);
             this.button3.TabIndex = 6;
@@ -123,11 +125,32 @@
             this.projectsBindingSource.DataMember = "projects";
             this.projectsBindingSource.DataSource = this.aGPSdbDataSet;
             // 
+            // comboBox1
+            // 
+            this.comboBox1.FormattingEnabled = true;
+            this.comboBox1.Location = new System.Drawing.Point(108, 121);
+            this.comboBox1.Name = "comboBox1";
+            this.comboBox1.Size = new System.Drawing.Size(300, 24);
+            this.comboBox1.TabIndex = 8;
+            this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label2.Location = new System.Drawing.Point(12, 120);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(90, 25);
+            this.label2.TabIndex = 9;
+            this.label2.Text = "Projects";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1154, 537);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.comboBox1);
             this.Controls.Add(this.dataGridView1);
             this.Controls.Add(this.button3);
             this.Controls.Add(this.button2);
@@ -135,11 +158,13 @@
             this.Controls.Add(this.label1);
             this.Name = "Form1";
             this.Text = "AGPS";
+            this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.aGPSdbDataSet)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.aGPSdbDataSetBindingSource)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.projectsBindingSource)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -152,6 +177,8 @@
         private System.Windows.Forms.BindingSource projectsBindingSource;
         private AGPSadmin.AGPSdbDataSet aGPSdbDataSet;
         private System.Windows.Forms.BindingSource aGPSdbDataSetBindingSource;
+        private System.Windows.Forms.ComboBox comboBox1;
+        private System.Windows.Forms.Label label2;
     }
 }
 

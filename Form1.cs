@@ -1,4 +1,5 @@
 ﻿using AGPSadmin;
+using AGPSadmin.Models;
 using AGPSadmin.Repositories;
 using System;
 using System.Data;
@@ -67,12 +68,15 @@ namespace AdminApp
                 MessageBox.Show("Cannot edit an empty row.");
                 return;
             }
+
             var value = this.dataGridView1.SelectedRows[0].Cells[0].Value.ToString();
+
             if(value == null || value.Length == 0)
             {
                 MessageBox.Show("Selected project ID is invalid.");
                 return;
             }
+
             if (!int.TryParse(value, out int projectid))
             {
                 MessageBox.Show("Selected project ID is not a valid number.");
@@ -94,47 +98,71 @@ namespace AdminApp
 
         private void button2_Click(object sender, EventArgs e)
         {
-            
-                if (this.dataGridView1.SelectedRows.Count == 0)
-                {
-                    MessageBox.Show("Please select a project to delete.");
-                    return;
-                }
-                DataGridViewRow row = dataGridView1.SelectedRows[0];
-                if (row.IsNewRow)
-                {
-                    MessageBox.Show("Cannot delete an empty row.");
-                    return;
-                }
-                var value = this.dataGridView1.SelectedRows[0].Cells[0].Value.ToString();
-                if (value == null || value.Length == 0 )
-                {
-                    MessageBox.Show("Selected project ID is invalid.");
-                    return;
-                }
-                if (!int.TryParse(value, out int projectid))
-                {
-                    MessageBox.Show("Selected project ID is not a valid number.");
-                    return;
-                }
+            if (this.dataGridView1.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Please select a project to delete.");
+                return;
+            }
+
+            DataGridViewRow row = dataGridView1.SelectedRows[0];
+            if (row.IsNewRow)
+            {
+                MessageBox.Show("Cannot delete an empty row.");
+                return;
+            }
+
+            var value = this.dataGridView1.SelectedRows[0].Cells[0].Value.ToString();
+
+            if (value == null || value.Length == 0)
+            {
+                MessageBox.Show("Selected project ID is invalid.");
+                return;
+            }
+
+            if (!int.TryParse(value, out int projectid))
+            {
+                MessageBox.Show("Selected project ID is not a valid number.");
+                return;
+            }
 
             DialogResult dialogResult = MessageBox.Show("Are you sure you want to delete this project?", "Confirm Deletion", MessageBoxButtons.YesNo);
-                if (dialogResult == DialogResult.Yes)
-                {
-                    var repo = new ProjectRepository();
-                    repo.DeleteProject(projectid);
-                    ReadProjects();
-                }
-            
-            
+            if (dialogResult == DialogResult.Yes)
+            {
+                var repo = new ProjectRepository();
+                repo.DeleteProject(projectid);
+                ReadProjects();
+            }
         }
+
         private void button1_Click(object sender, EventArgs e)
         {
             Form2 form = new Form2();
             if (form.ShowDialog() == DialogResult.OK)
             {
-                ReadProjects();
+                LoadProjects();
             }
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string selected = comboBox1.SelectedItem.ToString();
+
+            ProjectRepository repo = new ProjectRepository();
+            DataTable dt = repo.GetProjectTable(selected);
+
+            dataGridView1.DataSource = dt;
+        }
+        private void LoadProjects()
+        {
+            ProjectRepository repo = new ProjectRepository();
+            var names = repo.GetProjectNames();
+
+            comboBox1.Items.Clear();
+            comboBox1.Items.AddRange(names.ToArray());
+        }
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            LoadProjects();
         }
     }
 }
