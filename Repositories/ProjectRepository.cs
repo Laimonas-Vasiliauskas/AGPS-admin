@@ -3,12 +3,22 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Configuration;
 
 namespace AGPSadmin.Repositories
 {
     public class ProjectRepository
     {
-        private readonly string connectionString = "Data Source=localhost\\SQLEXPRESS;Initial Catalog=AGPSdb;Integrated Security=True;";
+        private readonly string connectionString;
+
+public ProjectRepository()
+{
+    string raw = ConfigurationManager.ConnectionStrings["AGPSdb"].ConnectionString;
+
+    string pwd = Environment.GetEnvironmentVariable("AGPSDB_PASSWORD");
+
+    connectionString = raw.Replace("{PWD}", pwd);
+}
 
         public List<Project> GetProjects()
         {
