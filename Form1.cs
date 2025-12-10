@@ -16,6 +16,8 @@ namespace AdminApp
 {
     public partial class Form1 : Form
     {
+        private ProjectRepository repo = new ProjectRepository();
+
         private bool _isUpdating;
         public Form1()
         {
@@ -188,7 +190,7 @@ namespace AdminApp
                 string text = comboBox1.Text;
                 int caret = comboBox1.SelectionStart;
 
-               
+
                 var names = repo.GetProjectNames(text);
 
                 comboBox1.BeginUpdate();
@@ -208,5 +210,45 @@ namespace AdminApp
             }
         }
 
+        private void button5_Click(object sender, EventArgs e)
+        {
+            // paimam projekto pavadinimą iš Search laukelio (comboBox1)
+            string projectName = comboBox1.Text?.Trim();
+
+            if (string.IsNullOrWhiteSpace(projectName))
+            {
+                MessageBox.Show("Please enter or select a project name in Search before exporting.",
+                    "No project selected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            using (SaveFileDialog sfd = new SaveFileDialog())
+            {
+                sfd.Title = "Export project to Excel";
+                sfd.Filter = "Excel files (*.xlsx)|*.xlsx";
+                sfd.FileName = projectName + ".xlsx";
+
+                if (sfd.ShowDialog() == DialogResult.OK)
+                {
+                    string filePath = sfd.FileName;
+                    repo.ExportToExcel(filePath, projectName);
+
+                    MessageBox.Show("File exported successfully!", "Success",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            var dialog = new OpenFileDialog();
+            dialog.Filter = "Excel Files|*.xlsx";
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                repo.ImportExcelToSql(dialog.FileName);
+                MessageBox.Show("Excel import completed!");
+            }
+        }
     }
 }

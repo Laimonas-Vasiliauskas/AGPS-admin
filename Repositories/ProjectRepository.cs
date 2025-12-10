@@ -1,9 +1,13 @@
 ﻿using AGPSadmin.Models;
+using OfficeOpenXml;
+using OfficeOpenXml.Table;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
-using System.Configuration;
+using System.IO;
+using System.Windows.Forms;
 
 namespace AGPSadmin.Repositories
 {
@@ -11,14 +15,14 @@ namespace AGPSadmin.Repositories
     {
         private readonly string connectionString;
 
-public ProjectRepository()
-{
-    string raw = ConfigurationManager.ConnectionStrings["AGPSdb"].ConnectionString;
+        public ProjectRepository()
+        {
+            string raw = ConfigurationManager.ConnectionStrings["AGPSdb"].ConnectionString;
 
-    string pwd = Environment.GetEnvironmentVariable("AGPSDB_PASSWORD");
+            string pwd = Environment.GetEnvironmentVariable("AGPSDB_PASSWORD");
 
-    connectionString = raw.Replace("{PWD}", pwd);
-}
+            connectionString = raw.Replace("{PWD}", pwd);
+        }
 
         public List<Project> GetProjects()
         {
@@ -203,7 +207,6 @@ public ProjectRepository()
 
             return result;
         }
-
         public DataTable GetProjectTable(string projectName)
         {
             DataTable table = new DataTable();
@@ -224,8 +227,103 @@ public ProjectRepository()
                     }
                 }
             }
-
             return table;
         }
+        public void ExportToExcel(string filePath, string projectName)
+        {
+            DataTable dt = new DataTable();
+
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+
+                string sql = @"
+            SELECT 
+                id AS [ID],
+                projectname AS [Project Name],
+                partname AS [Part Name],
+                madeby AS [Made By],
+                typeofwork AS [Type Of Work],
+                created_at AS [Created At],
+                comments AS [Comments],
+                ischecked AS [Is Checked]
+            FROM projects
+            WHERE projectname = @projectName
+            ORDER BY id DESC";
+
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@projectName", projectName);
+
+                    using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                    {
+                        da.Fill(dt);
+                    }
+                }
+            }
+
+            if (dt.Rows.Count == 0)
+            {
+                MessageBox.Show($"No rows found for project '{projectName}'");
+                return;
+            }
+
+            using (var excel = new OfficeOpenXml.ExcelPackage())
+            {
+                var ws = excel.Workbook.Worksheets.Add("Project");
+                ws.Cells["A1"].LoadFromDataTable(dt, true);
+                ws.Cells.AutoFitColumns();
+                using (var headerRange = ws.Cells[1, 1, 1, dt.Columns.Count])
+                {
+                    headerRange.Style.Font.Bold = true;
+                }
+                ws.View.FreezePanes(2, 1);
+                ws.Column(6).Width = 20;
+                ws.Column(6).Style.Numberformat.Format = "yyyy-MM-dd HH:mm";
+                File.WriteAllBytes(filePath, excel.GetAsByteArray());
+            }
+        }
+        public void ImportExcelToSql(string filePath)
+        {
+            using (var package = new ExcelPackage(new FileInfo(filePath)))
+            {
+                ExcelWorksheet ws = package.Workbook.Worksheets[0];
+                int rows = ws.Dimension.Rows;
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    for (int row = 2; row <= rows; row++) // skip header
+                    {
+                        string projectName = ws.Cells[row, 2].Text;
+                        string partName = ws.Cells[row, 3].Text;
+                        string madeBy = ws.Cells[row, 4].Text;
+                        string typeOfWork = ws.Cells[row, 5].Text;
+                        DateTime createdAt = DateTime.Parse(ws.Cells[row, 6].Text);
+                        string comments = ws.Cells[row, 7].Text;
+                        string isChecked = ws.Cells[row, 8].Text;
+
+                        string sql = @"INSERT INTO projects
+                               (projectname, partname, madeby, typeofwork, created_at, comments, ischecked)
+                               VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7)";
+
+                        using (SqlCommand cmd = new SqlCommand(sql, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@p1", projectName);
+                            cmd.Parameters.AddWithValue("@p2", partName);
+                            cmd.Parameters.AddWithValue("@p3", madeBy);
+                            cmd.Parameters.AddWithValue("@p4", typeOfWork);
+                            cmd.Parameters.AddWithValue("@p5", createdAt);
+                            cmd.Parameters.AddWithValue("@p6", comments);
+                            cmd.Parameters.AddWithValue("@p7", isChecked);
+
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+                }
+            }
+        }
+
     }
 }
