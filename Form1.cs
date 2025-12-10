@@ -23,6 +23,9 @@ namespace AdminApp
         {
             InitializeComponent();
             ReadProjects();
+            panel1.BackColor = System.Drawing.Color.Green;
+            panel2.BackColor = System.Drawing.Color.Red;
+            panel3.BackColor = System.Drawing.Color.Yellow;
         }
 
         private void ReadProjects()
@@ -36,7 +39,8 @@ namespace AdminApp
             dataTable.Columns.Add("Type of Work");
             dataTable.Columns.Add("Date");
             dataTable.Columns.Add("Comments");
-            dataTable.Columns.Add("Is Checked");
+            dataTable.Columns.Add("Remaining");
+            dataTable.Columns.Add("Done");
 
             var repo = new ProjectRepository();
             var projects = repo.GetProjects();
@@ -51,7 +55,8 @@ namespace AdminApp
                 row["Type of Work"] = project.typeofwork;
                 row["Date"] = project.created_at;
                 row["Comments"] = project.comments;
-                row["Is Checked"] = project.isChecked;
+                row["Remaining"] = project.remaining;
+                row["Done"] = project.done;
                 dataTable.Rows.Add(row);
             }
 
@@ -144,6 +149,7 @@ namespace AdminApp
             if (form.ShowDialog() == DialogResult.OK)
             {
                 LoadProjects();
+                ReadProjects();
             }
         }
 
@@ -212,7 +218,6 @@ namespace AdminApp
 
         private void button5_Click(object sender, EventArgs e)
         {
-            // paimam projekto pavadinimą iš Search laukelio (comboBox1)
             string projectName = comboBox1.Text?.Trim();
 
             if (string.IsNullOrWhiteSpace(projectName))

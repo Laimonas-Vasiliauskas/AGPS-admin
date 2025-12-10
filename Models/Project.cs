@@ -15,6 +15,7 @@ namespace AGPSadmin.Models
         public string typeofwork = "";
         public string created_at = "";
         public string comments = "";
-        public string isChecked = "";
+        public int remaining = 0;
+        public int done = 0;
     }
 }

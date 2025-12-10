@@ -25,15 +25,13 @@ namespace AGPSadmin
         public void EditProject(Project project)
         {
             this.Text = "Edit Project";
-            this.label1.Text = "Edit Project";
 
-            this.label1.Text = "" + project.id;
+            this.label9.Text = "" + project.id;
             this.textBox1.Text = project.projectname;
             this.textBox2.Text = project.partname;
             this.textBox3.Text = project.madeby;
             this.textBox4.Text = project.typeofwork;
             this.textBox5.Text = project.comments;
-            this.radioButton1.Text = project.isChecked;
 
             this.projectId = project.id;
         }
@@ -52,7 +50,8 @@ namespace AGPSadmin
             project.madeby = this.textBox3.Text;
             project.typeofwork = this.textBox4.Text;
             project.comments = this.textBox5.Text;
-            project.isChecked = this.radioButton1.Text;
+            project.remaining = int.TryParse(this.textBox6.Text, out int remaining) ? remaining : 0;
+            project.done = int.TryParse(this.textBox7.Text, out int done) ? done : 0;
 
             var repo = new ProjectRepository();
 

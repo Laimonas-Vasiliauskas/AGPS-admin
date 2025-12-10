@@ -49,7 +49,8 @@ namespace AGPSadmin.Repositories
                             project.typeofwork = Convert.ToString(reader["typeofwork"]);
                             project.created_at = Convert.ToString(reader["created_at"]);
                             project.comments = Convert.ToString(reader["comments"]);
-                            project.isChecked = Convert.ToString(reader["isChecked"]);
+                            project.remaining = Convert.ToInt32(reader["remaining"]);
+                            project.done = Convert.ToInt32(reader["done"]);
 
                             projects.Add(project);
                         }
@@ -89,7 +90,8 @@ namespace AGPSadmin.Repositories
                                 project.typeofwork = reader.GetString(4);
                                 project.created_at = reader.GetDateTime(5).ToString();
                                 project.comments = reader.GetString(6);
-                                project.isChecked = reader.GetString(7);
+                                project.remaining = reader.GetInt32(7);
+                                project.done = reader.GetInt32(8);
                                 return project;
                             }
                         }
@@ -111,8 +113,8 @@ namespace AGPSadmin.Repositories
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
-                    string sql = "INSERT INTO projects (projectname, partname, madeby, typeofwork, created_at, comments, isChecked) " +
-                                 "VALUES (@projectname, @partname, @madeby, @typeofwork, @created_at, @comments, @isChecked)";
+                    string sql = "INSERT INTO projects (projectname, partname, madeby, typeofwork, created_at, comments, remaining, done) " +
+                                 "VALUES (@projectname, @partname, @madeby, @typeofwork, @created_at, @comments, @remaining, @done)";
 
                     using (SqlCommand command = new SqlCommand(sql, connection))
                     {
@@ -122,7 +124,8 @@ namespace AGPSadmin.Repositories
                         command.Parameters.AddWithValue("@typeofwork", project.typeofwork);
                         command.Parameters.AddWithValue("@created_at", DateTime.Now);
                         command.Parameters.AddWithValue("@comments", project.comments);
-                        command.Parameters.AddWithValue("@isChecked", project.isChecked);
+                        command.Parameters.AddWithValue("@remaining", project.remaining);
+                        command.Parameters.AddWithValue("@done", project.done);
                         command.ExecuteNonQuery();
                     }
                 }
@@ -141,7 +144,7 @@ namespace AGPSadmin.Repositories
                 {
                     connection.Open();
                     string sql = "UPDATE projects SET projectname = @projectname, partname = @partname, madeby = @madeby, " +
-                                 "typeofwork = @typeofwork, comments = @comments, isChecked = @isChecked WHERE id = @id";
+                                 "typeofwork = @typeofwork, comments = @comments, remaining = @remaining, done = @done WHERE id = @id";
 
                     using (SqlCommand command = new SqlCommand(sql, connection))
                     {
@@ -150,7 +153,8 @@ namespace AGPSadmin.Repositories
                         command.Parameters.AddWithValue("@madeby", project.madeby);
                         command.Parameters.AddWithValue("@typeofwork", project.typeofwork);
                         command.Parameters.AddWithValue("@comments", project.comments);
-                        command.Parameters.AddWithValue("@isChecked", project.isChecked);
+                        command.Parameters.AddWithValue("@remaining", project.remaining);
+                        command.Parameters.AddWithValue("@done", project.done);
                         command.Parameters.AddWithValue("@id", project.id);
                         command.ExecuteNonQuery();
                     }
@@ -246,7 +250,8 @@ namespace AGPSadmin.Repositories
                 typeofwork AS [Type Of Work],
                 created_at AS [Created At],
                 comments AS [Comments],
-                ischecked AS [Is Checked]
+                remaining AS [Remaining],
+                done AS [Done]
             FROM projects
             WHERE projectname = @projectName
             ORDER BY id DESC";
@@ -294,7 +299,7 @@ namespace AGPSadmin.Repositories
                 {
                     conn.Open();
 
-                    for (int row = 2; row <= rows; row++) // skip header
+                    for (int row = 2; row <= rows; row++) 
                     {
                         string projectName = ws.Cells[row, 2].Text;
                         string partName = ws.Cells[row, 3].Text;
@@ -302,11 +307,12 @@ namespace AGPSadmin.Repositories
                         string typeOfWork = ws.Cells[row, 5].Text;
                         DateTime createdAt = DateTime.Parse(ws.Cells[row, 6].Text);
                         string comments = ws.Cells[row, 7].Text;
-                        string isChecked = ws.Cells[row, 8].Text;
+                        string remaining = ws.Cells[row, 8].Text;
+                        string done = ws.Cells[row, 9].Text;
 
                         string sql = @"INSERT INTO projects
-                               (projectname, partname, madeby, typeofwork, created_at, comments, ischecked)
-                               VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7)";
+                               (projectname, partname, madeby, typeofwork, created_at, comments, remaining, done)
+                               VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8)";
 
                         using (SqlCommand cmd = new SqlCommand(sql, conn))
                         {
@@ -316,7 +322,8 @@ namespace AGPSadmin.Repositories
                             cmd.Parameters.AddWithValue("@p4", typeOfWork);
                             cmd.Parameters.AddWithValue("@p5", createdAt);
                             cmd.Parameters.AddWithValue("@p6", comments);
-                            cmd.Parameters.AddWithValue("@p7", isChecked);
+                            cmd.Parameters.AddWithValue("@p7", remaining);
+                            cmd.Parameters.AddWithValue("@p8", done);
 
                             cmd.ExecuteNonQuery();
                         }
