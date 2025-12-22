@@ -11,11 +11,16 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Drawing;
+using System.Collections.Generic;
 
 namespace AdminApp
 {
     public partial class Form1 : Form
     {
+        private readonly Timer _doneWatchTimer = new Timer();
+        private readonly Dictionary<int, int> _lastDoneById = new Dictionary<int, int>();
+        private bool _baselineLoaded = false;
         private ProjectRepository repo = new ProjectRepository();
 
         private bool _isUpdating;
@@ -23,9 +28,10 @@ namespace AdminApp
         {
             InitializeComponent();
             ReadProjects();
-            panel1.BackColor = System.Drawing.Color.Green;
-            panel2.BackColor = System.Drawing.Color.Red;
-            panel3.BackColor = System.Drawing.Color.Yellow;
+            StartDoneWatcher();
+            panel1.BackColor = System.Drawing.Color.LightGreen;
+            panel2.BackColor = System.Drawing.Color.LightCoral;
+            panel3.BackColor = System.Drawing.Color.Khaki;
         }
 
         private void ReadProjects()
@@ -61,6 +67,7 @@ namespace AdminApp
             }
 
             this.dataGridView1.DataSource = dataTable;
+            ApplyProjectStatusColors();
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -161,6 +168,8 @@ namespace AdminApp
             DataTable dt = repo.GetProjectTable(selected);
 
             dataGridView1.DataSource = dt;
+            ApplyProjectStatusColors();
+
         }
 
         private void LoadProjects()
@@ -175,10 +184,14 @@ namespace AdminApp
         private void Form1_Load(object sender, EventArgs e)
         {
             LoadProjects();
+            ApplyProjectStatusColors();
+            dataGridView1.DataBindingComplete += dataGridView1_DataBindingComplete;
         }
 
         private void comboBox1_TextUpdate(object sender, EventArgs e)
         {
+            ApplyProjectStatusColors();
+
             ProjectRepository repo = new ProjectRepository();
             if (string.IsNullOrEmpty(comboBox1.Text))
             {
@@ -254,6 +267,104 @@ namespace AdminApp
                 repo.ImportExcelToSql(dialog.FileName);
                 MessageBox.Show("Excel import completed!");
             }
+        }
+        private void ApplyProjectStatusColors()
+        {
+            foreach (DataGridViewRow row in dataGridView1.Rows)
+            {
+                if (row.IsNewRow) continue;
+
+                int remaining = Convert.ToInt32(row.Cells["Remaining"].Value ?? 0);
+                int done = Convert.ToInt32(row.Cells["Done"].Value ?? 0);
+
+                if (remaining == 0)
+                    row.DefaultCellStyle.BackColor = Color.LightGreen;   
+                else if (done == 0)
+                    row.DefaultCellStyle.BackColor = Color.LightCoral;   
+                else
+                    row.DefaultCellStyle.BackColor = Color.Khaki;        
+
+                row.DefaultCellStyle.SelectionBackColor = row.DefaultCellStyle.BackColor;
+            }
+        }
+        private void dataGridView1_DataBindingComplete(object sender, DataGridViewBindingCompleteEventArgs e)
+        {
+            ApplyProjectStatusColors();
+        }
+        private void label1_Click(object sender, EventArgs e)
+        {
+
+        }
+        private void StartDoneWatcher()
+        {
+            _doneWatchTimer.Interval = 100;
+            _doneWatchTimer.Tick += DoneWatchTimer_Tick;
+            _doneWatchTimer.Start();
+        }
+
+        private void DoneWatchTimer_Tick(object sender, EventArgs e)
+        {
+            try
+            {
+                var projects = repo.GetProjects();
+
+                if (!_baselineLoaded)
+                {
+                    _lastDoneById.Clear();
+                    foreach (var p in projects)
+                        _lastDoneById[p.id] = p.done;
+
+                    _baselineLoaded = true;
+                    return;
+                }
+
+                foreach (var p in projects)
+                {
+                    if (_lastDoneById.TryGetValue(p.id, out int oldDone))
+                    {
+                        if (p.done > oldDone)
+                        {
+                            int delta = p.done - oldDone;
+                            _lastDoneById[p.id] = p.done;
+
+                            MessageBox.Show(
+                                $"Ready to check: +{delta}\n" +
+                                $"Project: {p.projectname}\n" +
+                                $"Part name: {p.partname}\n" +
+                                $"Made by: {p.madeby}\n" +
+                                $"Type of work: {p.typeofwork}\n" +
+                                $"Done totall: {p.done}",
+                                "Update",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Information
+                            );
+
+                            ReadProjects();
+                        }
+                        else
+                        {
+                            _lastDoneById[p.id] = p.done;
+                        }
+                    }
+                    else
+                    {
+                        _lastDoneById[p.id] = p.done;
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            _doneWatchTimer.Stop();
+            base.OnFormClosing(e);
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            LoadProjects();
         }
     }
 }

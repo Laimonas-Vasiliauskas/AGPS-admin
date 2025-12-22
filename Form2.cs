@@ -30,7 +30,7 @@ namespace AGPSadmin
             this.textBox1.Text = project.projectname;
             this.textBox2.Text = project.partname;
             this.textBox3.Text = project.madeby;
-            this.textBox4.Text = project.typeofwork;
+            this.comboBox1.Text = project.typeofwork;
             this.textBox5.Text = project.comments;
 
             this.projectId = project.id;
@@ -48,7 +48,7 @@ namespace AGPSadmin
             project.projectname = this.textBox1.Text;
             project.partname = this.textBox2.Text;
             project.madeby = this.textBox3.Text;
-            project.typeofwork = this.textBox4.Text;
+            project.typeofwork = this.comboBox1.Text;
             project.comments = this.textBox5.Text;
             project.remaining = int.TryParse(this.textBox6.Text, out int remaining) ? remaining : 0;
             project.done = int.TryParse(this.textBox7.Text, out int done) ? done : 0;
@@ -70,6 +70,11 @@ namespace AGPSadmin
         private void button2_Click(object sender, EventArgs e)
         {
             this.DialogResult = DialogResult.Cancel;
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

@@ -195,7 +195,7 @@ namespace AGPSadmin.Repositories
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 connection.Open();
-                string sql = "SELECT projectname FROM projects WHERE (@projectname IS NULL OR @projectname = '') OR projectname LIKE '%' + @projectname + '%';";
+                string sql = "SELECT DISTINCT projectname FROM projects WHERE (@projectname IS NULL OR @projectname = '') OR projectname LIKE '%' + @projectname + '%';";
 
                 using (SqlCommand cmd = new SqlCommand(sql, connection))
                 {
@@ -327,6 +327,39 @@ namespace AGPSadmin.Repositories
 
                             cmd.ExecuteNonQuery();
                         }
+                    }
+                }
+            }
+        }
+        public void AddWorkAndUpdateRemainingForAll(int rowId, string projectName, string partName, int doneDelta)
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                using (SqlTransaction tx = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        using (SqlCommand cmd1 = new SqlCommand(@"UPDATE projects SET done = done + @delta WHERE id = @id;", connection, tx))
+                        {
+                            cmd1.Parameters.AddWithValue("@delta", doneDelta);
+                            cmd1.Parameters.AddWithValue("@id", rowId);
+                            cmd1.ExecuteNonQuery();
+                        }
+                        using (SqlCommand cmd2 = new SqlCommand(@"UPDATE projects SET remaining = CASE WHEN remaining - @delta < 0 THEN 0 ELSE remaining - @delta END WHERE projectname = @projectname AND partname = @partname;", connection, tx))
+                        {
+                            cmd2.Parameters.AddWithValue("@delta", doneDelta);
+                            cmd2.Parameters.AddWithValue("@projectname", projectName);
+                            cmd2.Parameters.AddWithValue("@partname", partName);
+                            cmd2.ExecuteNonQuery();
+                        }
+                        tx.Commit();
+                    }
+                    catch
+                    {
+                        tx.Rollback();
+                        throw;
                     }
                 }
             }
