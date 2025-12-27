@@ -19,7 +19,7 @@ namespace AdminApp
     public partial class Form1 : Form
     {
         private readonly Timer _doneWatchTimer = new Timer();
-        private readonly Dictionary<int, int> _lastDoneById = new Dictionary<int, int>();
+        private readonly Dictionary<int, int> _lastDoneByPartId = new Dictionary<int, int>();
         private bool _baselineLoaded = false;
         private ProjectRepository repo = new ProjectRepository();
 
@@ -49,26 +49,42 @@ namespace AdminApp
             dataTable.Columns.Add("Done");
 
             var repo = new ProjectRepository();
-            var projects = repo.GetProjects();
+            var projects = repo.GetProjectsWithParts();
 
             foreach (var project in projects)
             {
-                var row = dataTable.NewRow();
-                row["ID"] = project.id;
-                row["Project Name"] = project.projectname;
-                row["Part Name"] = project.partname;
-                row["Made By"] = project.madeby;
-                row["Type of Work"] = project.typeofwork;
-                row["Date"] = project.created_at;
-                row["Comments"] = project.comments;
-                row["Remaining"] = project.remaining;
-                row["Done"] = project.done;
-                dataTable.Rows.Add(row);
+                // jei projektas NETURI dalių
+                if (project.Parts == null || project.Parts.Count == 0)
+                {
+                    var row = dataTable.NewRow();
+                    row["ID"] = project.id;
+                    row["Project Name"] = project.projectname;
+                    dataTable.Rows.Add(row);
+                }
+                else
+                {
+                    foreach (var part in project.Parts)
+                    {
+                        var row = dataTable.NewRow();
+                        row["ID"] = project.id;
+                        row["Project Name"] = project.projectname;
+                        row["Part Name"] = part.partname;
+                        row["Made By"] = part.madeby;
+                        row["Type of Work"] = part.typeofwork;
+                        row["Date"] = part.created_at;
+                        row["Comments"] = part.comments;
+                        row["Remaining"] = part.remaining;
+                        row["Done"] = part.done;
+                        dataTable.Rows.Add(row);
+                    }
+                }
             }
 
-            this.dataGridView1.DataSource = dataTable;
+            dataGridView1.DataSource = dataTable;
             ApplyProjectStatusColors();
         }
+
+
 
         private void button3_Click(object sender, EventArgs e)
         {
@@ -100,12 +116,20 @@ namespace AdminApp
             }
 
             var repo = new ProjectRepository();
-            var project = repo.GetProject(projectid);
+            var project = repo.GetProjectWithParts(projectid);
+
+            // Find the selected part, if any
+            Part part = null;
+            var partName = row.Cells["Part Name"].Value?.ToString();
+            if (!string.IsNullOrWhiteSpace(partName) && project?.Parts != null)
+            {
+                part = project.Parts.FirstOrDefault(p => p.partname == partName);
+            }
 
             if (project == null) return;
 
             Form2 form = new Form2();
-            form.EditProject(project);
+            form.EditProjectWithPart(project, part);
             if (form.ShowDialog() == DialogResult.OK)
             {
                 ReadProjects();
@@ -306,34 +330,43 @@ namespace AdminApp
         {
             try
             {
-                var projects = repo.GetProjects();
+                var projects = repo.GetProjectsWithParts();
 
+                // surenkam VISUS part iš projektų
+                var allParts = projects
+                    .SelectMany(p => p.Parts)
+                    .ToList();
+
+                // pirmas paleidimas – tik užkraunam bazę
                 if (!_baselineLoaded)
                 {
-                    _lastDoneById.Clear();
-                    foreach (var p in projects)
-                        _lastDoneById[p.id] = p.done;
+                    _lastDoneByPartId.Clear();
+                    foreach (var part in allParts)
+                        _lastDoneByPartId[part.id] = part.done;
 
                     _baselineLoaded = true;
                     return;
                 }
 
-                foreach (var p in projects)
+                foreach (var part in allParts)
                 {
-                    if (_lastDoneById.TryGetValue(p.id, out int oldDone))
+                    if (_lastDoneByPartId.TryGetValue(part.id, out int oldDone))
                     {
-                        if (p.done > oldDone)
+                        if (part.done > oldDone)
                         {
-                            int delta = p.done - oldDone;
-                            _lastDoneById[p.id] = p.done;
+                            int delta = part.done - oldDone;
+                            _lastDoneByPartId[part.id] = part.done;
+
+                            var project = projects
+                                .FirstOrDefault(p => p.id == part.project_id);
 
                             MessageBox.Show(
                                 $"Ready to check: +{delta}\n" +
-                                $"Project: {p.projectname}\n" +
-                                $"Part name: {p.partname}\n" +
-                                $"Made by: {p.madeby}\n" +
-                                $"Type of work: {p.typeofwork}\n" +
-                                $"Done totall: {p.done}",
+                                $"Project: {project?.projectname}\n" +
+                                $"Part name: {part.partname}\n" +
+                                $"Made by: {part.madeby}\n" +
+                                $"Type of work: {part.typeofwork}\n" +
+                                $"Done total: {part.done}",
                                 "Update",
                                 MessageBoxButtons.OK,
                                 MessageBoxIcon.Information
@@ -341,21 +374,20 @@ namespace AdminApp
 
                             ReadProjects();
                         }
-                        else
-                        {
-                            _lastDoneById[p.id] = p.done;
-                        }
                     }
                     else
                     {
-                        _lastDoneById[p.id] = p.done;
+                        _lastDoneByPartId[part.id] = part.done;
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                MessageBox.Show(ex.Message);
             }
         }
+
+
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             _doneWatchTimer.Stop();

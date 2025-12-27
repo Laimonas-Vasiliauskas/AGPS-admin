@@ -8,14 +8,25 @@ namespace AGPSadmin.Models
 {
     public class Project
     {
-        public int id;
-        public string projectname = "";
-        public string partname = "";
-        public string madeby = "";
-        public string typeofwork = "";
-        public string created_at = "";
-        public string comments = "";
-        public int remaining = 0;
-        public int done = 0;
+        public int id { get; set; }
+        public string projectname { get; set; } = string.Empty;
+
+        public ICollection<Part> Parts { get; set; } = new List<Part>();
+
+    }
+
+    public class Part
+    {
+        public int id { get; set; }
+
+        public int project_id { get; set; }
+        public string partname { get; set; } = string.Empty;
+        public string madeby { get; set; } = string.Empty;
+        public string typeofwork { get; set; } = string.Empty;
+        public DateTime created_at { get; set; }
+        public string comments { get; set; } = string.Empty;
+        public int remaining { get; set; } = 0;
+        public int done { get; set; } = 0;
+
     }
 }

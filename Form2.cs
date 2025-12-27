@@ -22,16 +22,16 @@ namespace AGPSadmin
         }
 
         private int projectId = 0;
-        public void EditProject(Project project)
+        public void EditProjectWithPart(Project project, Part part)
         {
             this.Text = "Edit Project";
 
             this.label9.Text = "" + project.id;
             this.textBox1.Text = project.projectname;
-            this.textBox2.Text = project.partname;
-            this.textBox3.Text = project.madeby;
-            this.comboBox1.Text = project.typeofwork;
-            this.textBox5.Text = project.comments;
+            this.textBox2.Text = part.partname;
+            this.textBox3.Text = part.madeby;
+            this.comboBox1.Text = part.typeofwork;
+            this.textBox5.Text = part.comments;
 
             this.projectId = project.id;
         }
@@ -44,24 +44,25 @@ namespace AGPSadmin
         private void button1_Click(object sender, EventArgs e)
         {
             Project project = new Project();
+            Part part = new Part();
             project.id = this.projectId;
             project.projectname = this.textBox1.Text;
-            project.partname = this.textBox2.Text;
-            project.madeby = this.textBox3.Text;
-            project.typeofwork = this.comboBox1.Text;
-            project.comments = this.textBox5.Text;
-            project.remaining = int.TryParse(this.textBox6.Text, out int remaining) ? remaining : 0;
-            project.done = int.TryParse(this.textBox7.Text, out int done) ? done : 0;
+            part.partname = this.textBox2.Text;
+            part.madeby = this.textBox3.Text;
+            part.typeofwork = this.comboBox1.Text;
+            part.comments = this.textBox5.Text;
+            part.remaining = int.TryParse(this.textBox6.Text, out int remaining) ? remaining : 0;
+            part.done = int.TryParse(this.textBox7.Text, out int done) ? done : 0;
 
             var repo = new ProjectRepository();
 
             if (this.projectId == 0)
             {
-                repo.AddProject(project);
+                repo.AddProjectWithPart(project, part);
             }
             else
             {   
-                repo.UpdateProject(project);
+                repo.UpdateProjectWithPart(project, part);
             }
 
             this.DialogResult = DialogResult.OK;

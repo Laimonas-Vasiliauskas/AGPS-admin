@@ -7,6 +7,7 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace AGPSadmin.Repositories
@@ -17,16 +18,16 @@ namespace AGPSadmin.Repositories
 
         public ProjectRepository()
         {
-            string raw = ConfigurationManager.ConnectionStrings["AGPSdb"].ConnectionString;
+            string raw = ConfigurationManager.ConnectionStrings["AGPStestDB"].ConnectionString;
 
             string pwd = Environment.GetEnvironmentVariable("AGPSDB_PASSWORD");
 
             connectionString = raw.Replace("{PWD}", pwd);
         }
 
-        public List<Project> GetProjects()
+        public List<Project> GetProjectsWithParts()
         {
-            var projects = new List<Project>();
+            var projects = new Dictionary<int, Project>();
 
             try
             {
@@ -34,65 +35,56 @@ namespace AGPSadmin.Repositories
                 {
                     connection.Open();
 
-                    string sql = "SELECT * From projects ORDER BY id DESC";
+                    string sql = @"
+                SELECT 
+                    p.id AS ProjectId,
+                    p.projectname,
+                    pa.id AS PartId,
+                    pa.project_id,
+                    pa.partname,
+                    pa.madeby,
+                    pa.typeofwork,
+                    pa.created_at,
+                    pa.comments,
+                    pa.remaining,
+                    pa.done
+                FROM projects p
+                LEFT JOIN parts pa ON pa.project_id = p.id
+                ORDER BY p.id DESC";
+
                     using (SqlCommand command = new SqlCommand(sql, connection))
                     using (SqlDataReader reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
-                            Project project = new Project();
+                            int projectId = reader.GetInt32(reader.GetOrdinal("ProjectId"));
 
-                            project.id = Convert.ToInt32(reader["id"]);
-                            project.projectname = Convert.ToString(reader["projectname"]);
-                            project.partname = Convert.ToString(reader["partname"]);
-                            project.madeby = Convert.ToString(reader["madeby"]);
-                            project.typeofwork = Convert.ToString(reader["typeofwork"]);
-                            project.created_at = Convert.ToString(reader["created_at"]);
-                            project.comments = Convert.ToString(reader["comments"]);
-                            project.remaining = Convert.ToInt32(reader["remaining"]);
-                            project.done = Convert.ToInt32(reader["done"]);
-
-                            projects.Add(project);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("An error occurred while retrieving projects: " + ex.Message);
-            }
-
-            return projects;
-        }
-
-        public Project GetProject(int id)
-        {
-            try
-            {
-                using (SqlConnection connection = new SqlConnection(connectionString))
-                {
-                    connection.Open();
-
-                    string sql = "SELECT * FROM projects WHERE id = @id";
-                    using (SqlCommand command = new SqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@id", id);
-
-                        using (SqlDataReader reader = command.ExecuteReader())
-                        {
-                            if (reader.Read())
+                            // create project once
+                            if (!projects.TryGetValue(projectId, out Project project))
                             {
-                                Project project = new Project();
-                                project.id = reader.GetInt32(0);
-                                project.projectname = reader.GetString(1);
-                                project.partname = reader.GetString(2);
-                                project.madeby = reader.GetString(3);
-                                project.typeofwork = reader.GetString(4);
-                                project.created_at = reader.GetDateTime(5).ToString();
-                                project.comments = reader.GetString(6);
-                                project.remaining = reader.GetInt32(7);
-                                project.done = reader.GetInt32(8);
-                                return project;
+                                project = new Project
+                                {
+                                    id = projectId,
+                                    projectname = reader.GetString(reader.GetOrdinal("projectname"))
+                                };
+                                projects.Add(projectId, project);
+                            }
+
+                            // add part if exists
+                            if (!reader.IsDBNull(reader.GetOrdinal("PartId")))
+                            {
+                                project.Parts.Add(new Part
+                                {
+                                    id = reader.GetInt32(reader.GetOrdinal("PartId")),
+                                    project_id = projectId,
+                                    partname = reader.GetString(reader.GetOrdinal("partname")),
+                                    madeby = reader.GetString(reader.GetOrdinal("madeby")),
+                                    typeofwork = reader.GetString(reader.GetOrdinal("typeofwork")),
+                                    created_at = reader.GetDateTime(reader.GetOrdinal("created_at")),
+                                    comments = reader.GetString(reader.GetOrdinal("comments")),
+                                    remaining = reader.GetInt32(reader.GetOrdinal("remaining")),
+                                    done = reader.GetInt32(reader.GetOrdinal("done"))
+                                });
                             }
                         }
                     }
@@ -100,69 +92,197 @@ namespace AGPSadmin.Repositories
             }
             catch (Exception ex)
             {
-                Console.WriteLine("An error occurred while retrieving project: " + ex.Message);
+                Console.WriteLine("An error occurred while retrieving projects with parts: " + ex.Message);
             }
 
-            return null;
+            return projects.Values.ToList();
         }
 
-        public void AddProject(Project project)
+
+        public Project GetProjectWithParts(int id)
         {
+            Project project = null;
+
             try
             {
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
-                    string sql = "INSERT INTO projects (projectname, partname, madeby, typeofwork, created_at, comments, remaining, done) " +
-                                 "VALUES (@projectname, @partname, @madeby, @typeofwork, @created_at, @comments, @remaining, @done)";
+
+                    string sql = @"
+                SELECT 
+                    p.id AS ProjectId,
+                    p.projectname,
+                    pa.id AS PartId,
+                    pa.project_id,
+                    pa.partname,
+                    pa.madeby,
+                    pa.typeofwork,
+                    pa.created_at,
+                    pa.comments,
+                    pa.remaining,
+                    pa.done
+                FROM projects p
+                LEFT JOIN parts pa ON pa.project_id = p.id
+                WHERE p.id = @id";
 
                     using (SqlCommand command = new SqlCommand(sql, connection))
                     {
-                        command.Parameters.AddWithValue("@projectname", project.projectname);
-                        command.Parameters.AddWithValue("@partname", project.partname);
-                        command.Parameters.AddWithValue("@madeby", project.madeby);
-                        command.Parameters.AddWithValue("@typeofwork", project.typeofwork);
-                        command.Parameters.AddWithValue("@created_at", DateTime.Now);
-                        command.Parameters.AddWithValue("@comments", project.comments);
-                        command.Parameters.AddWithValue("@remaining", project.remaining);
-                        command.Parameters.AddWithValue("@done", project.done);
-                        command.ExecuteNonQuery();
+                        command.Parameters.Add("@id", SqlDbType.Int).Value = id;
+
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                // create project once
+                                if (project == null)
+                                {
+                                    project = new Project
+                                    {
+                                        id = reader.GetInt32(reader.GetOrdinal("ProjectId")),
+                                        projectname = reader.GetString(reader.GetOrdinal("projectname"))
+                                    };
+                                }
+
+                                // add part if exists
+                                if (!reader.IsDBNull(reader.GetOrdinal("PartId")))
+                                {
+                                    project.Parts.Add(new Part
+                                    {
+                                        id = reader.GetInt32(reader.GetOrdinal("PartId")),
+                                        project_id = project.id,
+                                        partname = reader.GetString(reader.GetOrdinal("partname")),
+                                        madeby = reader.GetString(reader.GetOrdinal("madeby")),
+                                        typeofwork = reader.GetString(reader.GetOrdinal("typeofwork")),
+                                        created_at = reader.GetDateTime(reader.GetOrdinal("created_at")),
+                                        comments = reader.GetString(reader.GetOrdinal("comments")),
+                                        remaining = reader.GetInt32(reader.GetOrdinal("remaining")),
+                                        done = reader.GetInt32(reader.GetOrdinal("done"))
+                                    });
+                                }
+                            }
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("An error occurred while adding project: " + ex.Message);
+                Console.WriteLine("An error occurred while retrieving project with parts: " + ex.Message);
+            }
+
+            return project;
+        }
+
+        public void AddProjectWithPart(Project project, Part part)
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                using (SqlTransaction transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        // 1️⃣ Insert Project
+                        string insertProjectSql =
+                            "INSERT INTO projects (projectname) " +
+                            "OUTPUT INSERTED.id " +
+                            "VALUES (@projectname)";
+
+                        int projectId;
+                        using (SqlCommand cmd = new SqlCommand(insertProjectSql, connection, transaction))
+                        {
+                            cmd.Parameters.Add("@projectname", SqlDbType.NVarChar)
+                                          .Value = project.projectname;
+
+                            projectId = (int)cmd.ExecuteScalar();
+                        }
+
+                        // 2️⃣ Insert Part
+                        string insertPartSql =
+                            @"INSERT INTO parts 
+                      (project_id, partname, madeby, typeofwork, created_at, comments, remaining, done)
+                      VALUES
+                      (@project_id, @partname, @madeby, @typeofwork, @created_at, @comments, @remaining, @done)";
+
+                        using (SqlCommand cmd = new SqlCommand(insertPartSql, connection, transaction))
+                        {
+                            cmd.Parameters.Add("@project_id", SqlDbType.Int).Value = projectId;
+                            cmd.Parameters.Add("@partname", SqlDbType.NVarChar).Value = part.partname;
+                            cmd.Parameters.Add("@madeby", SqlDbType.NVarChar).Value = part.madeby;
+                            cmd.Parameters.Add("@typeofwork", SqlDbType.NVarChar).Value = part.typeofwork;
+                            cmd.Parameters.Add("@created_at", SqlDbType.DateTime).Value = DateTime.Now;
+                            cmd.Parameters.Add("@comments", SqlDbType.NVarChar).Value = part.comments ?? "";
+                            cmd.Parameters.Add("@remaining", SqlDbType.Int).Value = part.remaining;
+                            cmd.Parameters.Add("@done", SqlDbType.Int).Value = part.done;
+
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
             }
         }
 
-        public void UpdateProject(Project project)
+        public void UpdateProjectWithPart(Project project, Part part)
         {
-            try
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                using (SqlConnection connection = new SqlConnection(connectionString))
+                connection.Open();
+                using (SqlTransaction transaction = connection.BeginTransaction())
                 {
-                    connection.Open();
-                    string sql = "UPDATE projects SET projectname = @projectname, partname = @partname, madeby = @madeby, " +
-                                 "typeofwork = @typeofwork, comments = @comments, remaining = @remaining, done = @done WHERE id = @id";
-
-                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    try
                     {
-                        command.Parameters.AddWithValue("@projectname", project.projectname);
-                        command.Parameters.AddWithValue("@partname", project.partname);
-                        command.Parameters.AddWithValue("@madeby", project.madeby);
-                        command.Parameters.AddWithValue("@typeofwork", project.typeofwork);
-                        command.Parameters.AddWithValue("@comments", project.comments);
-                        command.Parameters.AddWithValue("@remaining", project.remaining);
-                        command.Parameters.AddWithValue("@done", project.done);
-                        command.Parameters.AddWithValue("@id", project.id);
-                        command.ExecuteNonQuery();
+                        // 1️⃣ Update Project
+                        string updateProjectSql =
+                            "UPDATE projects SET projectname = @projectname WHERE id = @id";
+
+                        using (SqlCommand cmd = new SqlCommand(updateProjectSql, connection, transaction))
+                        {
+                            cmd.Parameters.Add("@projectname", SqlDbType.NVarChar)
+                                          .Value = project.projectname;
+                            cmd.Parameters.Add("@id", SqlDbType.Int)
+                                          .Value = project.id;
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        // 2️⃣ Update Part
+                        string updatePartSql =
+                            @"UPDATE parts SET
+                        partname = @partname,
+                        madeby = @madeby,
+                        typeofwork = @typeofwork,
+                        comments = @comments,
+                        remaining = @remaining,
+                        done = @done
+                      WHERE id = @partId";
+
+                        using (SqlCommand cmd = new SqlCommand(updatePartSql, connection, transaction))
+                        {
+                            cmd.Parameters.Add("@partname", SqlDbType.NVarChar).Value = part.partname;
+                            cmd.Parameters.Add("@madeby", SqlDbType.NVarChar).Value = part.madeby;
+                            cmd.Parameters.Add("@typeofwork", SqlDbType.NVarChar).Value = part.typeofwork;
+                            cmd.Parameters.Add("@comments", SqlDbType.NVarChar).Value = part.comments ?? "";
+                            cmd.Parameters.Add("@remaining", SqlDbType.Int).Value = part.remaining;
+                            cmd.Parameters.Add("@done", SqlDbType.Int).Value = part.done;
+                            cmd.Parameters.Add("@partId", SqlDbType.Int).Value = part.id;
+
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("An error occurred while updating project: " + ex.Message);
             }
         }
 
