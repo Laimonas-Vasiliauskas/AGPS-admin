@@ -294,20 +294,21 @@ namespace AdminApp
         }
         private void ApplyProjectStatusColors()
         {
+            if (dataGridView1.Columns.Contains("Remaining") == false ||
+                dataGridView1.Columns.Contains("Done") == false)
+                return;
+
             foreach (DataGridViewRow row in dataGridView1.Rows)
             {
                 if (row.IsNewRow) continue;
-
                 int remaining = Convert.ToInt32(row.Cells["Remaining"].Value ?? 0);
                 int done = Convert.ToInt32(row.Cells["Done"].Value ?? 0);
-
                 if (remaining == 0)
-                    row.DefaultCellStyle.BackColor = Color.LightGreen;   
+                    row.DefaultCellStyle.BackColor = Color.LightGreen;
                 else if (done == 0)
-                    row.DefaultCellStyle.BackColor = Color.LightCoral;   
+                    row.DefaultCellStyle.BackColor = Color.LightCoral;
                 else
-                    row.DefaultCellStyle.BackColor = Color.Khaki;        
-
+                    row.DefaultCellStyle.BackColor = Color.Khaki;
                 row.DefaultCellStyle.SelectionBackColor = row.DefaultCellStyle.BackColor;
             }
         }

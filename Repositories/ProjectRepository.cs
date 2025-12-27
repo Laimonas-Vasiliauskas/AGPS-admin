@@ -244,35 +244,65 @@ namespace AGPSadmin.Repositories
 
                         using (SqlCommand cmd = new SqlCommand(updateProjectSql, connection, transaction))
                         {
-                            cmd.Parameters.Add("@projectname", SqlDbType.NVarChar)
-                                          .Value = project.projectname;
-                            cmd.Parameters.Add("@id", SqlDbType.Int)
-                                          .Value = project.id;
+                            cmd.Parameters.Add("@projectname", System.Data.SqlDbType.NVarChar).Value = project.projectname ?? string.Empty;
+                            cmd.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = project.id;
                             cmd.ExecuteNonQuery();
                         }
 
-                        // 2️⃣ Update Part
-                        string updatePartSql =
-                            @"UPDATE parts SET
-                        partname = @partname,
-                        madeby = @madeby,
-                        typeofwork = @typeofwork,
-                        comments = @comments,
-                        remaining = @remaining,
-                        done = @done
-                      WHERE id = @partId";
-
-                        using (SqlCommand cmd = new SqlCommand(updatePartSql, connection, transaction))
+                        // If no part provided, nothing else to do
+                        if (part == null)
                         {
-                            cmd.Parameters.Add("@partname", SqlDbType.NVarChar).Value = part.partname;
-                            cmd.Parameters.Add("@madeby", SqlDbType.NVarChar).Value = part.madeby;
-                            cmd.Parameters.Add("@typeofwork", SqlDbType.NVarChar).Value = part.typeofwork;
-                            cmd.Parameters.Add("@comments", SqlDbType.NVarChar).Value = part.comments ?? "";
-                            cmd.Parameters.Add("@remaining", SqlDbType.Int).Value = part.remaining;
-                            cmd.Parameters.Add("@done", SqlDbType.Int).Value = part.done;
-                            cmd.Parameters.Add("@partId", SqlDbType.Int).Value = part.id;
+                            transaction.Commit();
+                            return;
+                        }
 
-                            cmd.ExecuteNonQuery();
+                        // 2️⃣ If part.id == 0 -> insert new part, otherwise update existing part
+                        if (part.id == 0)
+                        {
+                            string insertPartSql =
+                                @"INSERT INTO parts
+                                (project_id, partname, madeby, typeofwork, created_at, comments, remaining, done)
+                                VALUES
+                                (@project_id, @partname, @madeby, @typeofwork, @created_at, @comments, @remaining, @done)";
+
+                            using (SqlCommand cmd = new SqlCommand(insertPartSql, connection, transaction))
+                            {
+                                cmd.Parameters.AddWithValue("@project_id", project.id);
+                                cmd.Parameters.AddWithValue("@partname", (object)part.partname ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@madeby", (object)part.madeby ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@typeofwork", (object)part.typeofwork ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@created_at", part.created_at == default(DateTime) ? DateTime.Now : part.created_at);
+                                cmd.Parameters.AddWithValue("@comments", (object)part.comments ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@remaining", part.remaining);
+                                cmd.Parameters.AddWithValue("@done", part.done);
+
+                                cmd.ExecuteNonQuery();
+                            }
+                        }
+                        else
+                        {
+                            string updatePartSql =
+                                @"UPDATE parts SET
+                                    partname = @partname,
+                                    madeby = @madeby,
+                                    typeofwork = @typeofwork,
+                                    comments = @comments,
+                                    remaining = @remaining,
+                                    done = @done
+                                  WHERE id = @partId";
+
+                            using (SqlCommand cmd = new SqlCommand(updatePartSql, connection, transaction))
+                            {
+                                cmd.Parameters.AddWithValue("@partname", (object)part.partname ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@madeby", (object)part.madeby ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@typeofwork", (object)part.typeofwork ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@comments", (object)part.comments ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@remaining", part.remaining);
+                                cmd.Parameters.AddWithValue("@done", part.done);
+                                cmd.Parameters.AddWithValue("@partId", part.id);
+
+                                cmd.ExecuteNonQuery();
+                            }
                         }
 
                         transaction.Commit();
@@ -288,25 +318,42 @@ namespace AGPSadmin.Repositories
 
         public void DeleteProject(int id)
         {
-            try
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                using (SqlConnection connection = new SqlConnection(connectionString))
-                {
-                    connection.Open();
+                connection.Open();
 
-                    string sql = "DELETE FROM projects WHERE id = @id";
-                    using (SqlCommand command = new SqlCommand(sql, connection))
+                using (SqlTransaction transaction = connection.BeginTransaction())
+                {
+                    try
                     {
-                        command.Parameters.AddWithValue("@id", id);
-                        command.ExecuteNonQuery();
+                        // 1. Trinam parts
+                        string deletePartsSql = "DELETE FROM parts WHERE project_id = @id";
+                        using (SqlCommand cmd = new SqlCommand(deletePartsSql, connection, transaction))
+                        {
+                            cmd.Parameters.Add("@id", SqlDbType.Int).Value = id;
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        // 2. Trinam project
+                        string deleteProjectSql = "DELETE FROM projects WHERE id = @id";
+                        using (SqlCommand cmd = new SqlCommand(deleteProjectSql, connection, transaction))
+                        {
+                            cmd.Parameters.Add("@id", SqlDbType.Int).Value = id;
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        Console.WriteLine("An error occurred while deleting project: " + ex.Message);
+                        throw;
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine("An error occurred while deleting project: " + ex.Message);
-            }
         }
+
 
         public List<string> GetProjectNames(string projectName)
         {
@@ -333,18 +380,28 @@ namespace AGPSadmin.Repositories
         }
         public DataTable GetProjectTable(string projectName)
         {
-            DataTable table = new DataTable();
-
+            var table = new DataTable();
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 connection.Open();
-
-                string sql = "SELECT * FROM projects WHERE (@projectname IS NULL OR @projectname = '') OR projectname = @projectname";
-
+                string sql = @"
+            SELECT 
+                p.id AS [ID],
+                p.projectname AS [Project Name],
+                pa.partname AS [Part Name],
+                pa.madeby AS [Made By],
+                pa.typeofwork AS [Type of Work],
+                pa.created_at AS [Date],
+                pa.comments AS [Comments],
+                pa.remaining AS [Remaining],
+                pa.done AS [Done]
+            FROM projects p
+            LEFT JOIN parts pa ON pa.project_id = p.id
+            WHERE (@projectname IS NULL OR @projectname = '') OR p.projectname = @projectname
+            ORDER BY p.id DESC";
                 using (SqlCommand cmd = new SqlCommand(sql, connection))
                 {
                     cmd.Parameters.AddWithValue("@projectname", projectName);
-
                     using (SqlDataAdapter da = new SqlDataAdapter(cmd))
                     {
                         da.Fill(table);
@@ -363,22 +420,23 @@ namespace AGPSadmin.Repositories
 
                 string sql = @"
             SELECT 
-                id AS [ID],
-                projectname AS [Project Name],
-                partname AS [Part Name],
-                madeby AS [Made By],
-                typeofwork AS [Type Of Work],
-                created_at AS [Created At],
-                comments AS [Comments],
-                remaining AS [Remaining],
-                done AS [Done]
-            FROM projects
-            WHERE projectname = @projectName
+                p.id AS [ID],
+                p.projectname AS [Project Name],
+                pa.partname AS [Part Name],
+                pa.madeby AS [Made By],
+                pa.typeofwork AS [Type Of Work],
+                pa.created_at AS [Created At],
+                pa.comments AS [Comments],
+                pa.remaining AS [Remaining],
+                pa.done AS [Done]
+            FROM projects p
+            LEFT JOIN parts pa ON pa.project_id = p.id
+            WHERE projectname = @projectname
             ORDER BY id DESC";
 
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
-                    cmd.Parameters.AddWithValue("@projectName", projectName);
+                    cmd.Parameters.AddWithValue("@projectname", projectName);
 
                     using (SqlDataAdapter da = new SqlDataAdapter(cmd))
                     {
@@ -413,7 +471,10 @@ namespace AGPSadmin.Repositories
             using (var package = new ExcelPackage(new FileInfo(filePath)))
             {
                 ExcelWorksheet ws = package.Workbook.Worksheets[0];
-                int rows = ws.Dimension.Rows;
+                int rows = ws.Dimension?.Rows ?? 0;
+
+                if (rows < 2)
+                    return;
 
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
@@ -421,29 +482,60 @@ namespace AGPSadmin.Repositories
 
                     for (int row = 2; row <= rows; row++) 
                     {
-                        string projectName = ws.Cells[row, 2].Text;
-                        string partName = ws.Cells[row, 3].Text;
-                        string madeBy = ws.Cells[row, 4].Text;
-                        string typeOfWork = ws.Cells[row, 5].Text;
-                        DateTime createdAt = DateTime.Parse(ws.Cells[row, 6].Text);
-                        string comments = ws.Cells[row, 7].Text;
-                        string remaining = ws.Cells[row, 8].Text;
-                        string done = ws.Cells[row, 9].Text;
+                        string projectName = ws.Cells[row, 2].Text?.Trim();
+                        if (string.IsNullOrEmpty(projectName))
+                            continue; // skip rows without a project name
 
-                        string sql = @"INSERT INTO projects
-                               (projectname, partname, madeby, typeofwork, created_at, comments, remaining, done)
-                               VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8)";
+                        string partName = ws.Cells[row, 3].Text?.Trim();
+                        string madeBy = ws.Cells[row, 4].Text?.Trim();
+                        string typeOfWork = ws.Cells[row, 5].Text?.Trim();
 
-                        using (SqlCommand cmd = new SqlCommand(sql, conn))
+                        DateTime createdAt;
+                        if (!DateTime.TryParse(ws.Cells[row, 6].Text, out createdAt))
+                            createdAt = DateTime.Now;
+
+                        string comments = ws.Cells[row, 7].Text?.Trim();
+
+                        int remaining = 0;
+                        int.TryParse(ws.Cells[row, 8].Text, out remaining);
+
+                        int done = 0;
+                        int.TryParse(ws.Cells[row, 9].Text, out done);
+
+                        // Ensure project exists (create if not) and get project id
+                        int projectId = 0;
+                        using (SqlCommand cmdFind = new SqlCommand("SELECT id FROM projects WHERE projectname = @name", conn))
                         {
-                            cmd.Parameters.AddWithValue("@p1", projectName);
-                            cmd.Parameters.AddWithValue("@p2", partName);
-                            cmd.Parameters.AddWithValue("@p3", madeBy);
-                            cmd.Parameters.AddWithValue("@p4", typeOfWork);
-                            cmd.Parameters.AddWithValue("@p5", createdAt);
-                            cmd.Parameters.AddWithValue("@p6", comments);
-                            cmd.Parameters.AddWithValue("@p7", remaining);
-                            cmd.Parameters.AddWithValue("@p8", done);
+                            cmdFind.Parameters.AddWithValue("@name", projectName);
+                            var scalar = cmdFind.ExecuteScalar();
+                            if (scalar != null && scalar != DBNull.Value)
+                                projectId = Convert.ToInt32(scalar);
+                        }
+
+                        if (projectId == 0)
+                        {
+                            using (SqlCommand cmdInsertProject = new SqlCommand("INSERT INTO projects (projectname) OUTPUT INSERTED.id VALUES (@name)", conn))
+                            {
+                                cmdInsertProject.Parameters.AddWithValue("@name", projectName);
+                                projectId = (int)cmdInsertProject.ExecuteScalar();
+                            }
+                        }
+
+                        // Insert part linked to project
+                        string insertPartSql = @"INSERT INTO parts
+                               (project_id, partname, madeby, typeofwork, created_at, comments, remaining, done)
+                               VALUES (@project_id, @partname, @madeby, @typeofwork, @created_at, @comments, @remaining, @done)";
+
+                        using (SqlCommand cmd = new SqlCommand(insertPartSql, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@project_id", projectId);
+                            cmd.Parameters.AddWithValue("@partname", (object)partName ?? "");
+                            cmd.Parameters.AddWithValue("@madeby", (object)madeBy ?? "");
+                            cmd.Parameters.AddWithValue("@typeofwork", (object)typeOfWork ?? "");
+                            cmd.Parameters.AddWithValue("@created_at", createdAt);
+                            cmd.Parameters.AddWithValue("@comments", (object)comments ?? "");
+                            cmd.Parameters.AddWithValue("@remaining", remaining);
+                            cmd.Parameters.AddWithValue("@done", done);
 
                             cmd.ExecuteNonQuery();
                         }
