@@ -2,8 +2,10 @@
 using AGPSadmin.Models;
 using AGPSadmin.Repositories;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -11,8 +13,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Drawing;
-using System.Collections.Generic;
+using static OfficeOpenXml.ExcelErrorValue;
 
 namespace AdminApp
 {
@@ -118,7 +119,6 @@ namespace AdminApp
             var repo = new ProjectRepository();
             var project = repo.GetProjectWithParts(projectid);
 
-            // Find the selected part, if any
             Part part = null;
             var partName = row.Cells["Part Name"].Value?.ToString();
             if (!string.IsNullOrWhiteSpace(partName) && project?.Parts != null)

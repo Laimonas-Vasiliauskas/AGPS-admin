@@ -232,6 +232,48 @@ namespace AGPSadmin.Repositories
             }
         }
 
+        // Metodas pridėda prie projekto papildomų dalių
+        public void AddPartToProject(int project_id, Part part)
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                using (SqlTransaction transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        string insertPartSql =
+                            @"INSERT INTO parts 
+                      (project_id, partname, madeby, typeofwork, created_at, comments, remaining, done)
+                      VALUES
+                      (@project_id, @partname, @madeby, @typeofwork, @created_at, @comments, @remaining, @done)";
+
+                        using (SqlCommand cmd = new SqlCommand(insertPartSql, connection, transaction))
+                        {
+                            cmd.Parameters.Add("@project_id", SqlDbType.Int).Value = project_id;
+                            cmd.Parameters.Add("@partname", SqlDbType.NVarChar).Value = part.partname;
+                            cmd.Parameters.Add("@madeby", SqlDbType.NVarChar).Value = part.madeby;
+                            cmd.Parameters.Add("@typeofwork", SqlDbType.NVarChar).Value = part.typeofwork;
+                            cmd.Parameters.Add("@created_at", SqlDbType.DateTime).Value = DateTime.Now;
+                            cmd.Parameters.Add("@comments", SqlDbType.NVarChar).Value = part.comments ?? "";
+                            cmd.Parameters.Add("@remaining", SqlDbType.Int).Value = part.remaining;
+                            cmd.Parameters.Add("@done", SqlDbType.Int).Value = part.done;
+
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
+
         // Metodas atnaujina projektą
         public void UpdateProjectWithPart(Project project, Part part)
         {
@@ -320,7 +362,7 @@ namespace AGPSadmin.Repositories
             }
         }
 
-        // Metodas ištrina projekto dalis, po to pati projektą
+        // Metodas ištrina projekto dalis, po to projektą
         public void DeleteProject(int id)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
@@ -590,5 +632,26 @@ namespace AGPSadmin.Repositories
             }
         }
 
+        // Metodas gauna projekto ID pagal projekto vardą
+        public int GetProjectIdByName(string projectName)
+        {
+            if (string.IsNullOrWhiteSpace(projectName))
+                return 0;
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                string sql = "SELECT TOP 1 id FROM projects WHERE projectname = @projectname";
+                using (SqlCommand cmd = new SqlCommand(sql, connection))
+                {
+                    cmd.Parameters.AddWithValue("@projectname", projectName);
+                    var result = cmd.ExecuteScalar();
+                    if (result != null && result != DBNull.Value)
+                        return Convert.ToInt32(result);
+                }
+            }
+
+            return 0;
+        }
     }
 }

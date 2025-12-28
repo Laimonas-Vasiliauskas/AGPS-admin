@@ -19,16 +19,39 @@ namespace AGPSadmin
             InitializeComponent();
 
             this.DialogResult = DialogResult.Cancel;
+
+            LoadProjects();
+        }
+
+        // Užkrauna projektų vardus, kad pridėti dalių
+        private void LoadProjects()
+        {
+            try
+            {
+                var repo = new ProjectRepository();
+                var names = repo.GetProjectNames("");
+
+                comboBox2.Items.Clear();
+                comboBox2.Items.AddRange(names.ToArray());
+                comboBox2.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+                comboBox2.AutoCompleteSource = AutoCompleteSource.ListItems;
+            }
+            catch
+            {
+                
+            }
         }
 
         private int projectId = 0;
+
+        // Laukelių priskirimas prie DB reikšmių
         public void EditProjectWithPart(Project project, Part part)
         {
             this.Text = "Edit Project";
 
             this.label9.Text = "" + project.id;
-            this.textBox1.Text = project.projectname;
-            this.textBox2.Text = part.partname;
+            this.comboBox2.Text = project.projectname;
+            this.comboBox3.Text = part.partname;
             this.textBox3.Text = part.madeby;
             this.comboBox1.Text = part.typeofwork;
             this.textBox5.Text = part.comments;
@@ -36,18 +59,22 @@ namespace AGPSadmin
             this.projectId = project.id;
         }
 
-        private void label5_Click(object sender, EventArgs e)
+        public void AddProject(Project project)
         {
+            this.Text = "Add Project";
 
+            this.label9.Text = "" + project.id;
+            this.comboBox2.Text = project.projectname;
         }
 
+        // Mygtukas SAVE
         private void button1_Click(object sender, EventArgs e)
         {
             Project project = new Project();
             Part part = new Part();
             project.id = this.projectId;
-            project.projectname = this.textBox1.Text;
-            part.partname = this.textBox2.Text;
+            project.projectname = this.comboBox2.Text;
+            part.partname = this.comboBox3.Text;
             part.madeby = this.textBox3.Text;
             part.typeofwork = this.comboBox1.Text;
             part.comments = this.textBox5.Text;
@@ -58,24 +85,33 @@ namespace AGPSadmin
 
             if (this.projectId == 0)
             {
-                repo.AddProjectWithPart(project, part);
+                // Jeigu projektas su tokiu vardu egzistuoja, pridėdam naują dalį
+                int existingId = repo.GetProjectIdByName(project.projectname);
+                if (existingId > 0)
+                {
+                    repo.AddPartToProject(existingId, part);
+                }
+   
+                else
+                {
+                    // Egzistuojantis projektas nepasirinktas, kuria naują
+                    repo.AddProjectWithPart(project, part);
+                }
             }
             else
-            {   
+            {
+                // Redagoja pasirinkta projektą
                 repo.UpdateProjectWithPart(project, part);
             }
 
             this.DialogResult = DialogResult.OK;
         }
 
+        // Mygtukas CANCEL
         private void button2_Click(object sender, EventArgs e)
         {
             this.DialogResult = DialogResult.Cancel;
         }
 
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
     }
 }
