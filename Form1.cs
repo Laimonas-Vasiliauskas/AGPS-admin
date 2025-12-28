@@ -85,7 +85,7 @@ namespace AdminApp
         }
 
 
-
+        // Mygtukas EDIT
         private void button3_Click(object sender, EventArgs e)
         {
             if (this.dataGridView1.SelectedRows.Count == 0)
@@ -136,6 +136,7 @@ namespace AdminApp
             }
         }
 
+        // Mygtukas DELETE
         private void button2_Click(object sender, EventArgs e)
         {
             if (this.dataGridView1.SelectedRows.Count == 0)
@@ -174,12 +175,12 @@ namespace AdminApp
             }
         }
 
+        // Mygtukas ADD
         private void button1_Click(object sender, EventArgs e)
         {
             Form2 form = new Form2();
             if (form.ShowDialog() == DialogResult.OK)
             {
-                LoadProjects();
                 ReadProjects();
             }
         }
@@ -195,7 +196,7 @@ namespace AdminApp
             ApplyProjectStatusColors();
 
         }
-
+        
         private void LoadProjects()
         {
             ProjectRepository repo = new ProjectRepository();
@@ -204,7 +205,7 @@ namespace AdminApp
             comboBox1.Items.Clear();
             comboBox1.Items.AddRange(names.ToArray());
         }
-
+        
         private void Form1_Load(object sender, EventArgs e)
         {
             LoadProjects();
@@ -253,6 +254,7 @@ namespace AdminApp
             }
         }
 
+        // Mygtukas EXPORT
         private void button5_Click(object sender, EventArgs e)
         {
             string projectName = comboBox1.Text?.Trim();
@@ -281,6 +283,7 @@ namespace AdminApp
             }
         }
 
+        // Mygtukas IMPORT
         private void button4_Click(object sender, EventArgs e)
         {
             var dialog = new OpenFileDialog();
@@ -316,10 +319,7 @@ namespace AdminApp
         {
             ApplyProjectStatusColors();
         }
-        private void label1_Click(object sender, EventArgs e)
-        {
 
-        }
         private void StartDoneWatcher()
         {
             _doneWatchTimer.Interval = 100;
@@ -395,9 +395,5 @@ namespace AdminApp
             base.OnFormClosing(e);
         }
 
-        private void timer1_Tick(object sender, EventArgs e)
-        {
-            LoadProjects();
-        }
     }
 }

@@ -16,6 +16,7 @@ namespace AGPSadmin.Repositories
     {
         private readonly string connectionString;
 
+        // Prisijungimas prie DB
         public ProjectRepository()
         {
             string raw = ConfigurationManager.ConnectionStrings["AGPStestDB"].ConnectionString;
@@ -25,6 +26,7 @@ namespace AGPSadmin.Repositories
             connectionString = raw.Replace("{PWD}", pwd);
         }
 
+        // Metodas gauti duomenis iš DB
         public List<Project> GetProjectsWithParts()
         {
             var projects = new Dictionary<int, Project>();
@@ -70,7 +72,7 @@ namespace AGPSadmin.Repositories
                                 projects.Add(projectId, project);
                             }
 
-                            // add part if exists
+                            // Pridėti dalį, jeigu egzistuoja
                             if (!reader.IsDBNull(reader.GetOrdinal("PartId")))
                             {
                                 project.Parts.Add(new Part
@@ -98,7 +100,7 @@ namespace AGPSadmin.Repositories
             return projects.Values.ToList();
         }
 
-
+        // Metodas grąžina viena projekta pagal jo ID su visomis jo dalimis
         public Project GetProjectWithParts(int id)
         {
             Project project = null;
@@ -173,6 +175,7 @@ namespace AGPSadmin.Repositories
             return project;
         }
 
+        // Metodas įrašo nauja projekta į DB
         public void AddProjectWithPart(Project project, Part part)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
@@ -182,7 +185,7 @@ namespace AGPSadmin.Repositories
                 {
                     try
                     {
-                        // 1️⃣ Insert Project
+                        // Įrašo projekta
                         string insertProjectSql =
                             "INSERT INTO projects (projectname) " +
                             "OUTPUT INSERTED.id " +
@@ -197,7 +200,7 @@ namespace AGPSadmin.Repositories
                             projectId = (int)cmd.ExecuteScalar();
                         }
 
-                        // 2️⃣ Insert Part
+                        // Įrašo dalį
                         string insertPartSql =
                             @"INSERT INTO parts 
                       (project_id, partname, madeby, typeofwork, created_at, comments, remaining, done)
@@ -229,6 +232,7 @@ namespace AGPSadmin.Repositories
             }
         }
 
+        // Metodas atnaujina projektą
         public void UpdateProjectWithPart(Project project, Part part)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
@@ -238,7 +242,7 @@ namespace AGPSadmin.Repositories
                 {
                     try
                     {
-                        // 1️⃣ Update Project
+                        // Atnaujina projektą
                         string updateProjectSql =
                             "UPDATE projects SET projectname = @projectname WHERE id = @id";
 
@@ -249,7 +253,7 @@ namespace AGPSadmin.Repositories
                             cmd.ExecuteNonQuery();
                         }
 
-                        // If no part provided, nothing else to do
+                        // Jeigu nėra dalių, neturi ką daryti 
                         if (part == null)
                         {
                             transaction.Commit();
@@ -316,6 +320,7 @@ namespace AGPSadmin.Repositories
             }
         }
 
+        // Metodas ištrina projekto dalis, po to pati projektą
         public void DeleteProject(int id)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
@@ -326,7 +331,7 @@ namespace AGPSadmin.Repositories
                 {
                     try
                     {
-                        // 1. Trinam parts
+                        // 1. Trinam dalis
                         string deletePartsSql = "DELETE FROM parts WHERE project_id = @id";
                         using (SqlCommand cmd = new SqlCommand(deletePartsSql, connection, transaction))
                         {
@@ -334,7 +339,7 @@ namespace AGPSadmin.Repositories
                             cmd.ExecuteNonQuery();
                         }
 
-                        // 2. Trinam project
+                        // 2. Trinam projekta
                         string deleteProjectSql = "DELETE FROM projects WHERE id = @id";
                         using (SqlCommand cmd = new SqlCommand(deleteProjectSql, connection, transaction))
                         {
@@ -354,7 +359,7 @@ namespace AGPSadmin.Repositories
             }
         }
 
-
+        // Metodas grąžina unikalius projektų pavadinimus
         public List<string> GetProjectNames(string projectName)
         {
             var result = new List<string>();
@@ -378,6 +383,8 @@ namespace AGPSadmin.Repositories
 
             return result;
         }
+
+        // Metodas grąžina DataTable
         public DataTable GetProjectTable(string projectName)
         {
             var table = new DataTable();
@@ -410,6 +417,8 @@ namespace AGPSadmin.Repositories
             }
             return table;
         }
+
+        // Metodas eksportuoja vieno projekto duomenis į Excel
         public void ExportToExcel(string filePath, string projectName)
         {
             DataTable dt = new DataTable();
@@ -466,6 +475,8 @@ namespace AGPSadmin.Repositories
                 File.WriteAllBytes(filePath, excel.GetAsByteArray());
             }
         }
+
+        // Metodas importuoja duomenis iš Excel į DB
         public void ImportExcelToSql(string filePath)
         {
             using (var package = new ExcelPackage(new FileInfo(filePath)))
@@ -543,6 +554,8 @@ namespace AGPSadmin.Repositories
                 }
             }
         }
+
+        // Darbo progreso atnaujinimas (nežinau ar reikia)
         public void AddWorkAndUpdateRemainingForAll(int rowId, string projectName, string partName, int doneDelta)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
