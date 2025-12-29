@@ -55,6 +55,8 @@ namespace AGPSadmin
             this.textBox3.Text = part.madeby;
             this.comboBox1.Text = part.typeofwork;
             this.textBox5.Text = part.comments;
+            this.textBox6.Text = Convert.ToString(part.remaining);
+            this.textBox7.Text = Convert.ToString(part.done);
 
             this.projectId = project.id;
         }
