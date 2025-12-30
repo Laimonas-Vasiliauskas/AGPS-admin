@@ -40,6 +40,7 @@ namespace AdminApp
             DataTable dataTable = new DataTable();
 
             dataTable.Columns.Add("ID");
+            dataTable.Columns.Add("PartId");
             dataTable.Columns.Add("Project Name");
             dataTable.Columns.Add("Part Name");
             dataTable.Columns.Add("Made By");
@@ -68,6 +69,7 @@ namespace AdminApp
                     {
                         var row = dataTable.NewRow();
                         row["ID"] = project.id;
+                        row["PartId"] = part.id;
                         row["Project Name"] = project.projectname;
                         row["Part Name"] = part.partname;
                         row["Made By"] = part.madeby;
@@ -152,7 +154,7 @@ namespace AdminApp
                 return;
             }
 
-            var value = row.Cells[0].Value?.ToString();
+            var value = row.Cells[1].Value?.ToString();
 
             if (string.IsNullOrWhiteSpace(value))
             {
@@ -160,17 +162,18 @@ namespace AdminApp
                 return;
             }
 
-            if (!int.TryParse(value, out int projectid))
+            if (!int.TryParse(value, out int partid))
             {
                 MessageBox.Show("Selected project ID is not a valid number.");
                 return;
             }
 
-            DialogResult dialogResult = MessageBox.Show("Are you sure you want to delete this project?", "Confirm Deletion", MessageBoxButtons.YesNo);
+            DialogResult dialogResult = MessageBox.Show("Are you sure you want to delete this part?\n" +
+            "If it is the last part, the project will be deleted too.", "Confirm Deletion", MessageBoxButtons.YesNo);
             if (dialogResult == DialogResult.Yes)
             {
                 var repo = new ProjectRepository();
-                repo.DeleteProject(projectid);
+                repo.DeletePartOrProject(partid);
                 ReadProjects();
             }
         }

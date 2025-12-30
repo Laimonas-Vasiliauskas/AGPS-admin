@@ -363,43 +363,74 @@ namespace AGPSadmin.Repositories
         }
 
         // Metodas ištrina projekto dalis, po to projektą
-        public void DeleteProject(int id)
+        public void DeletePartOrProject(int partId)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 connection.Open();
 
-                using (SqlTransaction transaction = connection.BeginTransaction())
+                using (SqlTransaction tx = connection.BeginTransaction())
                 {
                     try
                     {
-                        // 1. Trinam dalis
-                        string deletePartsSql = "DELETE FROM parts WHERE project_id = @id";
-                        using (SqlCommand cmd = new SqlCommand(deletePartsSql, connection, transaction))
+                        int projectId;
+
+                        // 1️⃣ Gauti project_id pagal part.id
+                        using (SqlCommand cmd = new SqlCommand(
+                            "SELECT project_id FROM parts WHERE id = @partId",
+                            connection, tx))
                         {
-                            cmd.Parameters.Add("@id", SqlDbType.Int).Value = id;
+                            cmd.Parameters.AddWithValue("@partId", partId);
+                            var result = cmd.ExecuteScalar();
+
+                            if (result == null)
+                                return; // tokios dalies nėra
+
+                            projectId = (int)result;
+                        }
+
+                        // 2️⃣ Ištrinti dalį
+                        using (SqlCommand cmd = new SqlCommand(
+                            "DELETE FROM parts WHERE id = @partId",
+                            connection, tx))
+                        {
+                            cmd.Parameters.AddWithValue("@partId", partId);
                             cmd.ExecuteNonQuery();
                         }
 
-                        // 2. Trinam projekta
-                        string deleteProjectSql = "DELETE FROM projects WHERE id = @id";
-                        using (SqlCommand cmd = new SqlCommand(deleteProjectSql, connection, transaction))
+                        // 3️⃣ Patikrinti ar liko dalių projekte
+                        int remainingParts;
+                        using (SqlCommand cmd = new SqlCommand(
+                            "SELECT COUNT(*) FROM parts WHERE project_id = @projectId",
+                            connection, tx))
                         {
-                            cmd.Parameters.Add("@id", SqlDbType.Int).Value = id;
-                            cmd.ExecuteNonQuery();
+                            cmd.Parameters.AddWithValue("@projectId", projectId);
+                            remainingParts = (int)cmd.ExecuteScalar();
                         }
 
-                        transaction.Commit();
+                        // 4️⃣ Jei dalių nebeliko – trinti projektą
+                        if (remainingParts == 0)
+                        {
+                            using (SqlCommand cmd = new SqlCommand(
+                                "DELETE FROM projects WHERE id = @projectId",
+                                connection, tx))
+                            {
+                                cmd.Parameters.AddWithValue("@projectId", projectId);
+                                cmd.ExecuteNonQuery();
+                            }
+                        }
+
+                        tx.Commit();
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        transaction.Rollback();
-                        Console.WriteLine("An error occurred while deleting project: " + ex.Message);
+                        tx.Rollback();
                         throw;
                     }
                 }
             }
         }
+
 
         // Metodas grąžina unikalius projektų pavadinimus
         public List<string> GetProjectNames(string projectName)
