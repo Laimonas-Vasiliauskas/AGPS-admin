@@ -75,7 +75,7 @@
             this.button1.Location = new System.Drawing.Point(751, 115);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(144, 29);
-            this.button1.TabIndex = 4;
+            this.button1.TabIndex = 5;
             this.button1.Text = "Add";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
@@ -87,7 +87,7 @@
             this.button2.Location = new System.Drawing.Point(1059, 115);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(152, 29);
-            this.button2.TabIndex = 5;
+            this.button2.TabIndex = 7;
             this.button2.Text = "Delete";
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Click += new System.EventHandler(this.button2_Click);
@@ -119,7 +119,7 @@
             this.dataGridView1.RowTemplate.Height = 24;
             this.dataGridView1.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dataGridView1.Size = new System.Drawing.Size(1199, 375);
-            this.dataGridView1.TabIndex = 7;
+            this.dataGridView1.TabIndex = 8;
             // 
             // aGPSdbDataSet
             // 
@@ -143,7 +143,7 @@
             this.comboBox1.Location = new System.Drawing.Point(109, 111);
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(252, 33);
-            this.comboBox1.TabIndex = 8;
+            this.comboBox1.TabIndex = 1;
             this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
             this.comboBox1.TextUpdate += new System.EventHandler(this.comboBox1_TextUpdate);
             // 
@@ -164,7 +164,7 @@
             this.button4.Location = new System.Drawing.Point(451, 115);
             this.button4.Name = "button4";
             this.button4.Size = new System.Drawing.Size(144, 29);
-            this.button4.TabIndex = 10;
+            this.button4.TabIndex = 3;
             this.button4.Text = "Import";
             this.button4.UseVisualStyleBackColor = true;
             this.button4.Click += new System.EventHandler(this.button4_Click);
@@ -176,7 +176,7 @@
             this.button5.Location = new System.Drawing.Point(601, 115);
             this.button5.Name = "button5";
             this.button5.Size = new System.Drawing.Size(144, 29);
-            this.button5.TabIndex = 11;
+            this.button5.TabIndex = 4;
             this.button5.Text = "Export";
             this.button5.UseVisualStyleBackColor = true;
             this.button5.Click += new System.EventHandler(this.button5_Click);
@@ -241,17 +241,14 @@
             this.button6.FlatAppearance.BorderSize = 0;
             this.button6.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.button6.Font = new System.Drawing.Font("Segoe UI", 13.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button6.Location = new System.Drawing.Point(367, 103);
+            this.button6.Location = new System.Drawing.Point(367, 108);
             this.button6.Name = "button6";
-            this.button6.Size = new System.Drawing.Size(59, 41);
-            this.button6.TabIndex = 18;
+            this.button6.Size = new System.Drawing.Size(59, 37);
+            this.button6.TabIndex = 2;
             this.button6.Text = "⟳";
+            this.toolTip1.SetToolTip(this.button6, "Refresh Page");
             this.button6.UseVisualStyleBackColor = false;
             this.button6.Click += new System.EventHandler(this.button6_Click);
-            // 
-            // toolTip1
-            // 
-            this.toolTip1.ToolTipTitle = "Refresh Page";
             // 
             // Form1
             // 

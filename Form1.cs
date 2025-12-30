@@ -212,6 +212,8 @@ namespace AdminApp
         private void Form1_Load(object sender, EventArgs e)
         {
             LoadProjects();
+            dataGridView1.Columns["PartId"].Visible = false;
+            dataGridView1.Columns["Id"].Visible = false;
             ApplyProjectStatusColors();
             dataGridView1.DataBindingComplete += dataGridView1_DataBindingComplete;
         }
