@@ -398,5 +398,9 @@ namespace AdminApp
             base.OnFormClosing(e);
         }
 
+        private void button6_Click(object sender, EventArgs e)
+        {
+            ReadProjects();
+        }
     }
 }
