@@ -272,8 +272,6 @@ namespace AGPSadmin.Repositories
                 }
             }
         }
-
-
         // Metodas atnaujina projektą
         public void UpdateProjectWithPart(Project project, Part part)
         {
@@ -361,7 +359,6 @@ namespace AGPSadmin.Repositories
                 }
             }
         }
-
         // Metodas ištrina projekto dalis, po to projektą
         public void DeletePartOrProject(int partId)
         {
@@ -430,8 +427,6 @@ namespace AGPSadmin.Repositories
                 }
             }
         }
-
-
         // Metodas grąžina unikalius projektų pavadinimus
         public List<string> GetProjectNames(string projectName)
         {
@@ -648,5 +643,6 @@ namespace AGPSadmin.Repositories
 
             return 0;
         }
+
     }
 }

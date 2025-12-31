@@ -19,17 +19,16 @@ namespace AdminApp
 {
     public partial class Form1 : Form
     {
-        private readonly Timer _doneWatchTimer = new Timer();
+        private ProjectRepository repo = new ProjectRepository();
         private readonly Dictionary<int, int> _lastDoneByPartId = new Dictionary<int, int>();
         private bool _baselineLoaded = false;
-        private ProjectRepository repo = new ProjectRepository();
+        private bool _isRefreshing = false;
+        private bool _isUpdating = false;
 
-        private bool _isUpdating;
         public Form1()
         {
             InitializeComponent();
             ReadProjects();
-            StartDoneWatcher();
             panel1.BackColor = System.Drawing.Color.LightGreen;
             panel2.BackColor = System.Drawing.Color.LightCoral;
             panel3.BackColor = System.Drawing.Color.Khaki;
@@ -37,57 +36,65 @@ namespace AdminApp
 
         private void ReadProjects()
         {
-            DataTable dataTable = new DataTable();
+            if (_isRefreshing) return;
+            _isRefreshing = true;
 
-            dataTable.Columns.Add("ID");
-            dataTable.Columns.Add("PartId");
-            dataTable.Columns.Add("Project Name");
-            dataTable.Columns.Add("Part Name");
-            dataTable.Columns.Add("Made By");
-            dataTable.Columns.Add("Type of Work");
-            dataTable.Columns.Add("Date");
-            dataTable.Columns.Add("Comments");
-            dataTable.Columns.Add("Remaining");
-            dataTable.Columns.Add("Done");
-
-            var repo = new ProjectRepository();
-            var projects = repo.GetProjectsWithParts();
-
-            foreach (var project in projects)
+            try
             {
-                // jei projektas NETURI dalių
-                if (project.Parts == null || project.Parts.Count == 0)
+                DataTable dataTable = new DataTable();
+
+                dataTable.Columns.Add("ID");
+                dataTable.Columns.Add("PartId");
+                dataTable.Columns.Add("Project Name");
+                dataTable.Columns.Add("Part Name");
+                dataTable.Columns.Add("Made By");
+                dataTable.Columns.Add("Type of Work");
+                dataTable.Columns.Add("Date");
+                dataTable.Columns.Add("Comments");
+                dataTable.Columns.Add("Remaining");
+                dataTable.Columns.Add("Done");
+
+                var repo = new ProjectRepository();
+                var projects = repo.GetProjectsWithParts();
+
+                foreach (var project in projects)
                 {
-                    var row = dataTable.NewRow();
-                    row["ID"] = project.id;
-                    row["Project Name"] = project.projectname;
-                    dataTable.Rows.Add(row);
-                }
-                else
-                {
-                    foreach (var part in project.Parts)
+                    if (project.Parts == null || project.Parts.Count == 0)
                     {
                         var row = dataTable.NewRow();
                         row["ID"] = project.id;
-                        row["PartId"] = part.id;
                         row["Project Name"] = project.projectname;
-                        row["Part Name"] = part.partname;
-                        row["Made By"] = part.madeby;
-                        row["Type of Work"] = part.typeofwork;
-                        row["Date"] = part.created_at;
-                        row["Comments"] = part.comments;
-                        row["Remaining"] = part.remaining;
-                        row["Done"] = part.done;
                         dataTable.Rows.Add(row);
                     }
+                    else
+                    {
+                        foreach (var part in project.Parts)
+                        {
+                            var row = dataTable.NewRow();
+                            row["ID"] = project.id;
+                            row["PartId"] = part.id;
+                            row["Project Name"] = project.projectname;
+                            row["Part Name"] = part.partname;
+                            row["Made By"] = part.madeby;
+                            row["Type of Work"] = part.typeofwork;
+                            row["Date"] = part.created_at;
+                            row["Comments"] = part.comments;
+                            row["Remaining"] = part.remaining;
+                            row["Done"] = part.done;
+                            dataTable.Rows.Add(row);
+                        }
+                    }
                 }
+
+                dataGridView1.DataSource = dataTable;
+                ApplyProjectStatusColors();
+                DetectDoneChangesAndPopupFromGrid();
             }
-
-            dataGridView1.DataSource = dataTable;
-            ApplyProjectStatusColors();
+            finally
+            {
+                _isRefreshing = false;
+            }
         }
-
-
         // Mygtukas EDIT
         private void button3_Click(object sender, EventArgs e)
         {
@@ -324,83 +331,91 @@ namespace AdminApp
         {
             ApplyProjectStatusColors();
         }
-
-        private void StartDoneWatcher()
-        {
-            _doneWatchTimer.Interval = 100;
-            _doneWatchTimer.Tick += DoneWatchTimer_Tick;
-            _doneWatchTimer.Start();
-        }
-
-        private void DoneWatchTimer_Tick(object sender, EventArgs e)
-        {
-            try
-            {
-                var projects = repo.GetProjectsWithParts();
-
-                // surenkam VISUS part iš projektų
-                var allParts = projects
-                    .SelectMany(p => p.Parts)
-                    .ToList();
-
-                // pirmas paleidimas – tik užkraunam bazę
-                if (!_baselineLoaded)
-                {
-                    _lastDoneByPartId.Clear();
-                    foreach (var part in allParts)
-                        _lastDoneByPartId[part.id] = part.done;
-
-                    _baselineLoaded = true;
-                    return;
-                }
-
-                foreach (var part in allParts)
-                {
-                    if (_lastDoneByPartId.TryGetValue(part.id, out int oldDone))
-                    {
-                        if (part.done > oldDone)
-                        {
-                            int delta = part.done - oldDone;
-                            _lastDoneByPartId[part.id] = part.done;
-
-                            var project = projects
-                                .FirstOrDefault(p => p.id == part.project_id);
-
-                            MessageBox.Show(
-                                $"Ready to check: +{delta}\n" +
-                                $"Project: {project?.projectname}\n" +
-                                $"Part name: {part.partname}\n" +
-                                $"Made by: {part.madeby}\n" +
-                                $"Type of work: {part.typeofwork}\n" +
-                                $"Done total: {part.done}",
-                                "Update",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Information
-                            );
-
-                            ReadProjects();
-                        }
-                    }
-                    else
-                    {
-                        _lastDoneByPartId[part.id] = part.done;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-        }
-
-
-        protected override void OnFormClosing(FormClosingEventArgs e)
-        {
-            _doneWatchTimer.Stop();
-            base.OnFormClosing(e);
-        }
-
         private void button6_Click(object sender, EventArgs e)
+        {
+            ReadProjects();
+        }
+        private void DetectDoneChangesAndPopupFromGrid()
+        {
+            var changes = new List<string>();
+
+            // PIRMAS kartas: tik bazė (be popup)
+            if (!_baselineLoaded)
+            {
+                _lastDoneByPartId.Clear();
+
+                foreach (DataGridViewRow row in dataGridView1.Rows)
+                {
+                    if (row.IsNewRow) continue;
+
+                    // projektas be dalių -> PartId bus null/empty
+                    if (row.Cells["PartId"].Value == null || row.Cells["PartId"].Value == DBNull.Value)
+                        continue;
+
+                    int partId = Convert.ToInt32(row.Cells["PartId"].Value);
+
+                    int done = 0;
+                    int.TryParse(row.Cells["Done"].Value?.ToString(), out done);
+
+                    _lastDoneByPartId[partId] = done;
+                }
+
+                _baselineLoaded = true;
+                return;
+            }
+
+            // Toliau: tikrinam pokyčius
+            foreach (DataGridViewRow row in dataGridView1.Rows)
+            {
+                if (row.IsNewRow) continue;
+
+                if (row.Cells["PartId"].Value == null || row.Cells["PartId"].Value == DBNull.Value)
+                    continue;
+
+                int partId = Convert.ToInt32(row.Cells["PartId"].Value);
+
+                int done = 0;
+                int.TryParse(row.Cells["Done"].Value?.ToString(), out done);
+
+                _lastDoneByPartId.TryGetValue(partId, out int lastDone);
+
+                if (done > lastDone)
+                {
+                    int diff = done - lastDone;
+
+                    string projectName = row.Cells["Project Name"].Value?.ToString() ?? "";
+                    string partName = row.Cells["Part Name"].Value?.ToString() ?? "";
+                    string typeOfWork = row.Cells["Type of Work"].Value?.ToString() ?? "";
+                    string madeBy = row.Cells["Made By"].Value?.ToString() ?? "";
+
+                    changes.Add($" Project {projectName} Part {partName} Done +{diff} (Total {done}) Made By {madeBy}");
+
+                    _lastDoneByPartId[partId] = done;
+                }
+                else if (!_lastDoneByPartId.ContainsKey(partId))
+                {
+                    // nauja part atsirado
+                    _lastDoneByPartId[partId] = done;
+                }
+            }
+
+            if (changes.Count > 0)
+            {
+                MessageBox.Show(
+                    string.Join(Environment.NewLine, changes),
+                    "DB pasikeitė",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
+            }
+        }
+
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            RefreshProjectsAndDetectChanges();
+        }
+        private void RefreshProjectsAndDetectChanges()
         {
             ReadProjects();
         }

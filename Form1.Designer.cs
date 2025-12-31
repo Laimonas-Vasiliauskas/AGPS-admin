@@ -235,6 +235,12 @@
             this.label5.TabIndex = 17;
             this.label5.Text = "Not started";
             // 
+            // timer1
+            // 
+            this.timer1.Enabled = true;
+            this.timer1.Interval = 5000;
+            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            // 
             // button6
             // 
             this.button6.BackColor = System.Drawing.Color.Transparent;

@@ -27,6 +27,7 @@ namespace AGPSadmin.Models
         public string comments { get; set; } = string.Empty;
         public int remaining { get; set; } = 0;
         public int done { get; set; } = 0;
+        public List<Part> Parts { get; set; } = new List<Part>();
 
     }
 }
