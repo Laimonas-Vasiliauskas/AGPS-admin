@@ -61,14 +61,6 @@ namespace AGPSadmin
             this.projectId = project.id;
         }
 
-        public void AddProject(Project project)
-        {
-            this.Text = "Add Project";
-
-            this.label9.Text = "" + project.id;
-            this.comboBox2.Text = project.projectname;
-        }
-
         // Mygtukas SAVE
         private void button1_Click(object sender, EventArgs e)
         {

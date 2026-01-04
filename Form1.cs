@@ -388,7 +388,7 @@ namespace AdminApp
                     string typeOfWork = row.Cells["Type of Work"].Value?.ToString() ?? "";
                     string madeBy = row.Cells["Made By"].Value?.ToString() ?? "";
 
-                    changes.Add($" Project {projectName} Part {partName} Done +{diff} (Total {done}) Made By {madeBy}");
+                    changes.Add($" Project: {projectName} \n Part: {partName} \n Done: +{diff} (Total {done}) \n Made By: {madeBy}");
 
                     _lastDoneByPartId[partId] = done;
                 }
