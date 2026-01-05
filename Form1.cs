@@ -334,6 +334,7 @@ namespace AdminApp
         private void button6_Click(object sender, EventArgs e)
         {
             ReadProjects();
+            dataGridView1.Columns["PartId"].Visible = false;
         }
         private void DetectDoneChangesAndPopupFromGrid()
         {
@@ -403,21 +404,16 @@ namespace AdminApp
             {
                 MessageBox.Show(
                     string.Join(Environment.NewLine, changes),
-                    "DB pasikeitė",
+                    "DB Changes",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information
                 );
             }
         }
-
-
         private void timer1_Tick(object sender, EventArgs e)
         {
-            RefreshProjectsAndDetectChanges();
-        }
-        private void RefreshProjectsAndDetectChanges()
-        {
             ReadProjects();
+            dataGridView1.Columns["PartId"].Visible = false;
         }
     }
 }
