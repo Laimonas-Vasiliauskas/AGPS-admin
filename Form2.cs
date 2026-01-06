@@ -99,6 +99,7 @@ namespace AGPSadmin
             }
 
             this.DialogResult = DialogResult.OK;
+            
         }
 
         // Mygtukas CANCEL

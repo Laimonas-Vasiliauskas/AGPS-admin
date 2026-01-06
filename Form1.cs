@@ -36,65 +36,56 @@ namespace AdminApp
 
         private void ReadProjects()
         {
-            if (_isRefreshing) return;
-            _isRefreshing = true;
+            DataTable dataTable = new DataTable();
 
-            try
+            dataTable.Columns.Add("ID");
+            dataTable.Columns.Add("PartId");
+            dataTable.Columns.Add("Project Name");
+            dataTable.Columns.Add("Part Name");
+            dataTable.Columns.Add("Made By");
+            dataTable.Columns.Add("Type of Work");
+            dataTable.Columns.Add("Date");
+            dataTable.Columns.Add("Comments");
+            dataTable.Columns.Add("Remaining");
+            dataTable.Columns.Add("Done");
+
+            var repo = new ProjectRepository();
+            var projects = repo.GetProjectsWithParts();
+
+            foreach (var project in projects)
             {
-                DataTable dataTable = new DataTable();
-
-                dataTable.Columns.Add("ID");
-                dataTable.Columns.Add("PartId");
-                dataTable.Columns.Add("Project Name");
-                dataTable.Columns.Add("Part Name");
-                dataTable.Columns.Add("Made By");
-                dataTable.Columns.Add("Type of Work");
-                dataTable.Columns.Add("Date");
-                dataTable.Columns.Add("Comments");
-                dataTable.Columns.Add("Remaining");
-                dataTable.Columns.Add("Done");
-
-                var repo = new ProjectRepository();
-                var projects = repo.GetProjectsWithParts();
-
-                foreach (var project in projects)
+                if (project.Parts == null || project.Parts.Count == 0)
                 {
-                    if (project.Parts == null || project.Parts.Count == 0)
+                    var row = dataTable.NewRow();
+                    row["ID"] = project.id;
+                    row["Project Name"] = project.projectname;
+                    dataTable.Rows.Add(row);
+                }
+                else
+                {
+                    foreach (var part in project.Parts)
                     {
                         var row = dataTable.NewRow();
                         row["ID"] = project.id;
+                        row["PartId"] = part.id;
                         row["Project Name"] = project.projectname;
+                        row["Part Name"] = part.partname;
+                        row["Made By"] = part.madeby;
+                        row["Type of Work"] = part.typeofwork;
+                        row["Date"] = part.created_at;
+                        row["Comments"] = part.comments;
+                        row["Remaining"] = part.remaining;
+                        row["Done"] = part.done;
                         dataTable.Rows.Add(row);
                     }
-                    else
-                    {
-                        foreach (var part in project.Parts)
-                        {
-                            var row = dataTable.NewRow();
-                            row["ID"] = project.id;
-                            row["PartId"] = part.id;
-                            row["Project Name"] = project.projectname;
-                            row["Part Name"] = part.partname;
-                            row["Made By"] = part.madeby;
-                            row["Type of Work"] = part.typeofwork;
-                            row["Date"] = part.created_at;
-                            row["Comments"] = part.comments;
-                            row["Remaining"] = part.remaining;
-                            row["Done"] = part.done;
-                            dataTable.Rows.Add(row);
-                        }
-                    }
                 }
+            }
 
-                dataGridView1.DataSource = dataTable;
-                ApplyProjectStatusColors();
-                DetectDoneChangesAndPopupFromGrid();
-            }
-            finally
-            {
-                _isRefreshing = false;
-            }
+            dataGridView1.DataSource = dataTable;
+            ApplyProjectStatusColors();
+            
         }
+        
         // Mygtukas EDIT
         private void button3_Click(object sender, EventArgs e)
         {
@@ -182,6 +173,7 @@ namespace AdminApp
                 var repo = new ProjectRepository();
                 repo.DeletePartOrProject(partid);
                 ReadProjects();
+                LoadProjects();
             }
         }
 
@@ -192,6 +184,7 @@ namespace AdminApp
             if (form.ShowDialog() == DialogResult.OK)
             {
                 ReadProjects();
+                LoadProjects();
             }
         }
 
@@ -219,12 +212,12 @@ namespace AdminApp
         private void Form1_Load(object sender, EventArgs e)
         {
             LoadProjects();
-            dataGridView1.Columns["PartId"].Visible = false;
             dataGridView1.Columns["Id"].Visible = false;
+            dataGridView1.Columns["PartId"].Visible = false;
             ApplyProjectStatusColors();
             dataGridView1.DataBindingComplete += dataGridView1_DataBindingComplete;
         }
-
+        
         private void comboBox1_TextUpdate(object sender, EventArgs e)
         {
             ApplyProjectStatusColors();
@@ -264,7 +257,7 @@ namespace AdminApp
 
                 _isUpdating = false;
             }
-        }
+        } 
 
         // Mygtukas EXPORT
         private void button5_Click(object sender, EventArgs e)
@@ -305,6 +298,9 @@ namespace AdminApp
             {
                 repo.ImportExcelToSql(dialog.FileName);
                 MessageBox.Show("Excel import completed!");
+                ReadProjects();
+                LoadProjects();
+                
             }
         }
         private void ApplyProjectStatusColors()
@@ -334,8 +330,8 @@ namespace AdminApp
         private void button6_Click(object sender, EventArgs e)
         {
             ReadProjects();
-            dataGridView1.Columns["PartId"].Visible = false;
         }
+        /*
         private void DetectDoneChangesAndPopupFromGrid()
         {
             var changes = new List<string>();
@@ -408,12 +404,8 @@ namespace AdminApp
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information
                 );
-            }
-        }
-        private void timer1_Tick(object sender, EventArgs e)
-        {
-            ReadProjects();
-            dataGridView1.Columns["PartId"].Visible = false;
-        }
+            } 
+        } */
+
     }
 }

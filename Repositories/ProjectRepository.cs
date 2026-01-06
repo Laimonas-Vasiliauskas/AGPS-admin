@@ -463,6 +463,7 @@ namespace AGPSadmin.Repositories
             SELECT 
                 p.id AS [ID],
                 p.projectname AS [Project Name],
+                pa.id AS [PartId],
                 pa.partname AS [Part Name],
                 pa.madeby AS [Made By],
                 pa.typeofwork AS [Type of Work],
