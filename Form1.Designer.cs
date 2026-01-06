@@ -278,6 +278,7 @@
             this.button7.TabIndex = 18;
             this.button7.Text = "New Changes";
             this.button7.UseVisualStyleBackColor = true;
+            this.button7.Click += new System.EventHandler(this.button7_Click);
             // 
             // label6
             // 

@@ -24,6 +24,12 @@ namespace AdminApp
         private bool _baselineLoaded = false;
         private bool _isRefreshing = false;
         private bool _isUpdating = false;
+        // notification timer and tracking
+        private System.Windows.Forms.Timer _notificationTimer;
+        private readonly Dictionary<int, int> _lastNotifiedDoneByPartId = new Dictionary<int, int>();
+        private readonly object _notifLock = new object();
+        // pending notifications to be shown in Form3
+        private readonly List<AGPSadmin.Models.NotificationModel> _pendingNotifications = new List<AGPSadmin.Models.NotificationModel>();
 
         public Form1()
         {
@@ -32,6 +38,11 @@ namespace AdminApp
             panel1.BackColor = System.Drawing.Color.LightGreen;
             panel2.BackColor = System.Drawing.Color.LightCoral;
             panel3.BackColor = System.Drawing.Color.Khaki;
+
+            // Notification timer
+            _notificationTimer = new System.Windows.Forms.Timer();
+            _notificationTimer.Interval = 5000; // 5 seconds
+            _notificationTimer.Tick += NotificationTimer_Tick;
         }
 
         private void ReadProjects()
@@ -212,10 +223,14 @@ namespace AdminApp
         private void Form1_Load(object sender, EventArgs e)
         {
             LoadProjects();
-            dataGridView1.Columns["Id"].Visible = false;
             dataGridView1.Columns["PartId"].Visible = false;
+            dataGridView1.Columns["Id"].Visible = false;
             ApplyProjectStatusColors();
             dataGridView1.DataBindingComplete += dataGridView1_DataBindingComplete;
+
+            // start notification polling
+            InitializeNotificationBaseline();
+            _notificationTimer.Start();
         }
         
         private void comboBox1_TextUpdate(object sender, EventArgs e)
@@ -303,6 +318,8 @@ namespace AdminApp
                 
             }
         }
+
+        // Nustato spalvą projektui
         private void ApplyProjectStatusColors()
         {
             if (dataGridView1.Columns.Contains("Remaining") == false ||
@@ -327,85 +344,128 @@ namespace AdminApp
         {
             ApplyProjectStatusColors();
         }
+
+        // Mygtukas REFRESH
         private void button6_Click(object sender, EventArgs e)
         {
             ReadProjects();
         }
-        /*
-        private void DetectDoneChangesAndPopupFromGrid()
+
+        // Mygtukas NOTIFICATION
+        private void button7_Click(object sender, EventArgs e)
         {
-            var changes = new List<string>();
-
-            // PIRMAS kartas: tik bazė (be popup)
-            if (!_baselineLoaded)
+            try
             {
-                _lastDoneByPartId.Clear();
-
-                foreach (DataGridViewRow row in dataGridView1.Rows)
+                // open Form3 and pass pending notifications
+                var f = new Form3();
+                List<AGPSadmin.Models.NotificationModel> itemsToShow;
+                lock (_notifLock)
                 {
-                    if (row.IsNewRow) continue;
-
-                    // projektas be dalių -> PartId bus null/empty
-                    if (row.Cells["PartId"].Value == null || row.Cells["PartId"].Value == DBNull.Value)
-                        continue;
-
-                    int partId = Convert.ToInt32(row.Cells["PartId"].Value);
-
-                    int done = 0;
-                    int.TryParse(row.Cells["Done"].Value?.ToString(), out done);
-
-                    _lastDoneByPartId[partId] = done;
+                    itemsToShow = new List<AGPSadmin.Models.NotificationModel>(_pendingNotifications);
+                    _pendingNotifications.Clear();
                 }
 
-                _baselineLoaded = true;
+                f.Show();
+                // Siunčia pranešimus į FORM3
+                if (itemsToShow.Count > 0)
+                {
+                    f.AddNotifications(itemsToShow);
+                }
+                // Atnaujina label
+                UpdateNotificationLabel(_pendingNotifications.Count);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Unable to open notifications: " + ex.Message);
+            }
+        }
+
+        private void InitializeNotificationBaseline()
+        {
+            lock (_notifLock)
+            {
+                _lastNotifiedDoneByPartId.Clear();
+                _pendingNotifications.Clear();
+                var projects = repo.GetProjectsWithParts();
+                foreach (var project in projects)
+                {
+                    if (project.Parts == null) continue;
+                    foreach (var part in project.Parts)
+                    {
+                        _lastNotifiedDoneByPartId[part.id] = part.done;
+                    }
+                }
+                UpdateNotificationLabel(_pendingNotifications.Count);
+            }
+        }
+
+        // Tikrina atnaujinimus
+        private void NotificationTimer_Tick(object sender, EventArgs e)
+        {
+            try
+            {
+                int newItems = 0;
+                var projects = repo.GetProjectsWithParts();
+
+                lock (_notifLock)
+                {
+                    foreach (var project in projects)
+                    {
+                        if (project.Parts == null) continue;
+                        foreach (var part in project.Parts)
+                        {
+                            int last = 0;
+                            _lastNotifiedDoneByPartId.TryGetValue(part.id, out last);
+                            if (part.done > last)
+                            {
+                                int delta = part.done - last;
+                                // add pending notification (one per delta)
+                                var nm = new AGPSadmin.Models.NotificationModel
+                                {
+                                    ProjectName = project.projectname ?? string.Empty,
+                                    PartId = part.id,
+                                    PartName = part.partname ?? string.Empty,
+                                    Delta = delta,
+                                    TotalDone = part.done,
+                                    MadeBy = part.madeby ?? string.Empty,
+                                    TypeOfWork = part.typeofwork ?? string.Empty,
+                                    Comments = part.comments ?? string.Empty
+                                };
+
+                                _pendingNotifications.Add(nm);
+                                newItems += delta;
+                                _lastNotifiedDoneByPartId[part.id] = part.done;
+                            }
+                            else if (!_lastNotifiedDoneByPartId.ContainsKey(part.id))
+                            {
+                                _lastNotifiedDoneByPartId[part.id] = part.done;
+                            }
+                        }
+                    }
+                }
+
+                if (newItems > 0)
+                {
+                    UpdateNotificationLabel(_pendingNotifications.Count);
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
+        // Label su notification skaičiu
+        private void UpdateNotificationLabel(int count)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action<int>(UpdateNotificationLabel), count);
                 return;
             }
 
-            // Toliau: tikrinam pokyčius
-            foreach (DataGridViewRow row in dataGridView1.Rows)
-            {
-                if (row.IsNewRow) continue;
-
-                if (row.Cells["PartId"].Value == null || row.Cells["PartId"].Value == DBNull.Value)
-                    continue;
-
-                int partId = Convert.ToInt32(row.Cells["PartId"].Value);
-
-                int done = 0;
-                int.TryParse(row.Cells["Done"].Value?.ToString(), out done);
-
-                _lastDoneByPartId.TryGetValue(partId, out int lastDone);
-
-                if (done > lastDone)
-                {
-                    int diff = done - lastDone;
-
-                    string projectName = row.Cells["Project Name"].Value?.ToString() ?? "";
-                    string partName = row.Cells["Part Name"].Value?.ToString() ?? "";
-                    string typeOfWork = row.Cells["Type of Work"].Value?.ToString() ?? "";
-                    string madeBy = row.Cells["Made By"].Value?.ToString() ?? "";
-
-                    changes.Add($" Project: {projectName} \n Part: {partName} \n Done: +{diff} (Total {done}) \n Made By: {madeBy}");
-
-                    _lastDoneByPartId[partId] = done;
-                }
-                else if (!_lastDoneByPartId.ContainsKey(partId))
-                {
-                    // nauja part atsirado
-                    _lastDoneByPartId[partId] = done;
-                }
-            }
-
-            if (changes.Count > 0)
-            {
-                MessageBox.Show(
-                    string.Join(Environment.NewLine, changes),
-                    "DB Changes",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information
-                );
-            } 
-        } */
-
+            label6.Text = count.ToString();
+            label6.ForeColor = count > 0 ? Color.Red : Color.Black;
+        }
     }
 }
