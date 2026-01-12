@@ -358,6 +358,9 @@ namespace AdminApp
             {
                 // open Form3 and pass pending notifications
                 var f = new Form3();
+                f.FormClosed += (s, args) => UpdateAfterForm3Close();
+                 
+
                 List<AGPSadmin.Models.NotificationModel> itemsToShow;
                 lock (_notifLock)
                 {
@@ -466,6 +469,20 @@ namespace AdminApp
 
             label6.Text = count.ToString();
             label6.ForeColor = count > 0 ? Color.Red : Color.Black;
+        }
+
+        // 3 Forma užsidaro
+        private void UpdateAfterForm3Close()
+        {
+            // Kai form3 užsidaro, counteris nusistato į 0
+            lock (_notifLock)
+            {
+                _pendingNotifications.Clear();
+            }
+            UpdateNotificationLabel(0);
+
+            // Kai form3 užsidaro, duomenis atsinaujina
+            ReadProjects();
         }
     }
 }

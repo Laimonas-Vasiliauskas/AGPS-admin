@@ -276,20 +276,20 @@
             this.button7.Name = "button7";
             this.button7.Size = new System.Drawing.Size(130, 37);
             this.button7.TabIndex = 18;
-            this.button7.Text = "New Changes";
+            this.button7.Text = "Notifications";
             this.button7.UseVisualStyleBackColor = true;
             this.button7.Click += new System.EventHandler(this.button7_Click);
             // 
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label6.Location = new System.Drawing.Point(720, 24);
+            this.label6.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.label6.Location = new System.Drawing.Point(743, 20);
             this.label6.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(52, 13);
+            this.label6.Size = new System.Drawing.Size(29, 20);
             this.label6.TabIndex = 19;
-            this.label6.Text = "Skaiciai";
+            this.label6.Text = "20";
             // 
             // Form1
             // 

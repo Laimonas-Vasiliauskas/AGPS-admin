@@ -1,4 +1,6 @@
-﻿using System;
+﻿using AdminApp;
+using AGPSadmin.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -7,7 +9,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using AGPSadmin.Models;
 
 namespace AGPSadmin
 {
@@ -22,6 +23,7 @@ namespace AGPSadmin
 
             this.Load += Form3_Load;
             this.FormClosing += Form3_FormClosing;
+
         }
 
         private void Form3_Load(object sender, EventArgs e)
@@ -34,6 +36,7 @@ namespace AGPSadmin
         private void Form3_FormClosing(object sender, FormClosingEventArgs e)
         {
             try { timer1.Stop(); } catch { }
+            
         }
 
         private void InitializeBaseline()
@@ -130,6 +133,11 @@ namespace AGPSadmin
                 flowLayoutPanel1.Controls.Add(item);
                 item.BringToFront();
             }
+        }
+
+        private void Form3_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            
         }
     }
 }

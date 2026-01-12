@@ -34,7 +34,7 @@ namespace AGPSadmin
             labelPartName.Text = "Part: " + (partName ?? string.Empty);
             labelDone.Text = $"Done: +{doneDelta} (Total {totalDone})";
             labelMadeBy.Text = "Made by: " + (madeBy ?? string.Empty);
-            labelTypeOfWork.Text = "Type: " + (typeOfWork ?? string.Empty);
+            labelTypeOfWork.Text = "Type of work: " + (typeOfWork ?? string.Empty);
             labelComments.Text = "Comments: " + (comments ?? string.Empty);
         }
     }
