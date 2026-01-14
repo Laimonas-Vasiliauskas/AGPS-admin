@@ -21,6 +21,10 @@ namespace AGPSadmin
             this.DialogResult = DialogResult.Cancel;
 
             LoadProjects();
+
+            // wire events to populate parts when project changes
+            this.comboBox2.SelectedIndexChanged += ComboBox2_SelectedIndexChanged;
+            this.comboBox2.TextChanged += ComboBox2_TextChanged;
         }
 
         // Užkrauna projektų vardus, kad pridėti dalių
@@ -29,16 +33,55 @@ namespace AGPSadmin
             try
             {
                 var repo = new ProjectRepository();
-                var names = repo.GetProjectNames("");
+                var names = repo.GetProjectNames("" );
 
                 comboBox2.Items.Clear();
                 comboBox2.Items.AddRange(names.ToArray());
                 comboBox2.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
                 comboBox2.AutoCompleteSource = AutoCompleteSource.ListItems;
+                
             }
             catch
             {
                 
+            }
+        }
+
+        private void ComboBox2_TextChanged(object sender, EventArgs e)
+        {
+            LoadPartsForProject(comboBox2.Text);
+        }
+
+        private void ComboBox2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string projectName = comboBox2.SelectedItem?.ToString() ?? comboBox2.Text;
+            LoadPartsForProject(projectName);
+        }
+
+        private void LoadPartsForProject(string projectName)
+        {
+            try
+            {
+                comboBox3.Items.Clear();
+
+                if (string.IsNullOrWhiteSpace(projectName))
+                    return;
+
+                var repo = new ProjectRepository();
+                int id = repo.GetProjectIdByName(projectName);
+                if (id == 0)
+                    return;
+
+                var project = repo.GetProjectWithParts(id);
+                if (project?.Parts == null)
+                    return;
+
+                var partNames = project.Parts.Select(p => p.partname ?? string.Empty).Distinct().ToArray();
+                comboBox3.Items.AddRange(partNames);
+            }
+            catch
+            {
+                // ignore load errors
             }
         }
 
@@ -51,6 +94,9 @@ namespace AGPSadmin
 
             this.label9.Text = "" + project.id;
             this.comboBox2.Text = project.projectname;
+            // load parts for this project and select the provided part if any
+            LoadPartsForProject(project.projectname);
+            if (part != null)
             this.comboBox3.Text = part.partname;
             this.textBox3.Text = part.madeby;
             this.comboBox1.Text = part.typeofwork;
@@ -83,6 +129,14 @@ namespace AGPSadmin
                 int existingId = repo.GetProjectIdByName(project.projectname);
                 if (existingId > 0)
                 {
+                    // check for duplicate part name in that project
+                    var existingProject = repo.GetProjectWithParts(existingId);
+                    if (existingProject?.Parts != null && existingProject.Parts.Any(p => string.Equals((p.partname ?? "").Trim(), (part.partname ?? "").Trim(), StringComparison.OrdinalIgnoreCase)))
+                    {
+                        MessageBox.Show("A part with that name already exists for the selected project.", "Duplicate Part", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
                     repo.AddPartToProject(existingId, part);
                 }
    

@@ -336,7 +336,7 @@
             this.Margin = new System.Windows.Forms.Padding(2);
             this.MinimumSize = new System.Drawing.Size(1200, 600);
             this.Name = "Form1";
-            this.Text = "AGPS";
+            this.Text = "AGPS(Project Control)";
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.aGPSdbDataSet)).EndInit();
