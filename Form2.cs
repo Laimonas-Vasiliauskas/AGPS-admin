@@ -22,7 +22,7 @@ namespace AGPSadmin
 
             LoadProjects();
 
-            // wire events to populate parts when project changes
+            // Prijungti įvykius, kad pasikeitus projektui būtų užpildytos dalys
             this.comboBox2.SelectedIndexChanged += ComboBox2_SelectedIndexChanged;
             this.comboBox2.TextChanged += ComboBox2_TextChanged;
         }
@@ -81,7 +81,7 @@ namespace AGPSadmin
             }
             catch
             {
-                // ignore load errors
+                // ignore 
             }
         }
 
@@ -129,7 +129,7 @@ namespace AGPSadmin
                 int existingId = repo.GetProjectIdByName(project.projectname);
                 if (existingId > 0)
                 {
-                    // check for duplicate part name in that project
+                    // Tikrina ar tokia dalis egzistuoja, prie pasirinkto projekto 
                     var existingProject = repo.GetProjectWithParts(existingId);
                     if (existingProject?.Parts != null && existingProject.Parts.Any(p => string.Equals((p.partname ?? "").Trim(), (part.partname ?? "").Trim(), StringComparison.OrdinalIgnoreCase)))
                     {
