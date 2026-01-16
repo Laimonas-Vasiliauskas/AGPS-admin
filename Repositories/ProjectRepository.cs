@@ -1,6 +1,5 @@
 ﻿using AGPSadmin.Models;
 using OfficeOpenXml;
-using OfficeOpenXml.Table;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -100,7 +99,7 @@ namespace AGPSadmin.Repositories
             return projects.Values.ToList();
         }
 
-        // Metodas grąžina viena projekta pagal jo ID su visomis jo dalimis
+        // Metodas grąžina viena projekto pagal jo ID su visomis jo dalimis
         public Project GetProjectWithParts(int id)
         {
             Project project = null;
@@ -644,6 +643,26 @@ namespace AGPSadmin.Repositories
 
             return 0;
         }
+         // Metodas atnaujina 'remaining' visoms projekto dalims su tuo paciu partname
+         public void UpdateRemainingForPartNameInProject(int projectId, string partName, int newRemaining)
+         {
+             if (string.IsNullOrWhiteSpace(partName))
+                 return;
 
-    }
-}
+             using (SqlConnection connection = new SqlConnection(connectionString))
+             {
+                 connection.Open();
+                 string sql = @"UPDATE parts SET remaining = @remaining 
+                                WHERE project_id = @projectId 
+                                  AND LOWER(LTRIM(RTRIM(ISNULL(partname, '')))) = LOWER(LTRIM(RTRIM(@partName)))";
+                 using (SqlCommand cmd = new SqlCommand(sql, connection))
+                 {
+                     cmd.Parameters.Add(new SqlParameter("@remaining", SqlDbType.Int) { Value = newRemaining });
+                     cmd.Parameters.Add(new SqlParameter("@projectId", SqlDbType.Int) { Value = projectId });
+                     cmd.Parameters.Add(new SqlParameter("@partName", SqlDbType.NVarChar, 200) { Value = partName.Trim() });
+                     cmd.ExecuteNonQuery();
+                 }
+             }
+         }
+     }
+ }

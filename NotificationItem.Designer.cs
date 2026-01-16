@@ -32,7 +32,6 @@
             this.labelPartName = new System.Windows.Forms.Label();
             this.labelDone = new System.Windows.Forms.Label();
             this.labelMadeBy = new System.Windows.Forms.Label();
-            this.labelComments = new System.Windows.Forms.Label();
             this.labelTypeOfWork = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
@@ -76,16 +75,6 @@
             this.labelMadeBy.TabIndex = 3;
             this.labelMadeBy.Text = "label4";
             // 
-            // labelComments
-            // 
-            this.labelComments.AutoSize = true;
-            this.labelComments.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.labelComments.Location = new System.Drawing.Point(5, 125);
-            this.labelComments.Name = "labelComments";
-            this.labelComments.Size = new System.Drawing.Size(50, 16);
-            this.labelComments.TabIndex = 4;
-            this.labelComments.Text = "label5";
-            // 
             // labelTypeOfWork
             // 
             this.labelTypeOfWork.AutoSize = true;
@@ -100,14 +89,14 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackColor = System.Drawing.SystemColors.InactiveCaption;
             this.Controls.Add(this.labelTypeOfWork);
-            this.Controls.Add(this.labelComments);
             this.Controls.Add(this.labelMadeBy);
             this.Controls.Add(this.labelDone);
             this.Controls.Add(this.labelPartName);
             this.Controls.Add(this.labelProjectName);
             this.Name = "NotificationItem";
-            this.Size = new System.Drawing.Size(250, 160);
+            this.Size = new System.Drawing.Size(250, 140);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -119,7 +108,6 @@
         private System.Windows.Forms.Label labelPartName;
         private System.Windows.Forms.Label labelDone;
         private System.Windows.Forms.Label labelMadeBy;
-        private System.Windows.Forms.Label labelComments;
         private System.Windows.Forms.Label labelTypeOfWork;
     }
 }

@@ -106,7 +106,7 @@ namespace AGPSadmin
                 foreach (var n in notifications)
                 {
                     var item = new NotificationItem();
-                    item.SetData(n.Item1, n.Item2, n.Item3, n.Item4, n.Item5, n.Item6, n.Item7);
+                    item.SetData(n.Item1, n.Item2, n.Item3, n.Item4, n.Item5, n.Item6);
                     // Pridėda į viršu
                     flowLayoutPanel1.Controls.Add(item);
                     item.BringToFront();
@@ -129,7 +129,7 @@ namespace AGPSadmin
             foreach (var nm in notifications)
             {
                 var item = new NotificationItem();
-                item.SetData(nm.ProjectName, nm.PartName, nm.Delta, nm.TotalDone, nm.MadeBy, nm.TypeOfWork, nm.Comments);
+                item.SetData(nm.ProjectName, nm.PartName, nm.Delta, nm.TotalDone, nm.MadeBy, nm.TypeOfWork);
                 flowLayoutPanel1.Controls.Add(item);
                 item.BringToFront();
             }

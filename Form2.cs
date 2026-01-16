@@ -87,26 +87,6 @@ namespace AGPSadmin
 
         private int projectId = 0;
 
-        // Laukelių priskirimas prie DB reikšmių
-        public void EditProjectWithPart(Project project, Part part)
-        {
-            this.Text = "Edit Project";
-
-            this.label9.Text = "" + project.id;
-            this.comboBox2.Text = project.projectname;
-            // load parts for this project and select the provided part if any
-            LoadPartsForProject(project.projectname);
-            if (part != null)
-            this.comboBox3.Text = part.partname;
-            this.textBox3.Text = part.madeby;
-            this.comboBox1.Text = part.typeofwork;
-            this.textBox5.Text = part.comments;
-            this.textBox6.Text = Convert.ToString(part.remaining);
-            this.textBox7.Text = Convert.ToString(part.done);
-
-            this.projectId = project.id;
-        }
-
         // Mygtukas SAVE
         private void button1_Click(object sender, EventArgs e)
         {
@@ -145,11 +125,6 @@ namespace AGPSadmin
                     // Egzistuojantis projektas nepasirinktas, kuria naują
                     repo.AddProjectWithPart(project, part);
                 }
-            }
-            else
-            {
-                // Redagoja pasirinkta projektą
-                repo.UpdateProjectWithPart(project, part);
             }
 
             this.DialogResult = DialogResult.OK;

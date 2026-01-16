@@ -139,7 +139,7 @@ namespace AdminApp
 
             if (project == null) return;
 
-            Form2 form = new Form2();
+            Form4 form = new Form4();
             form.EditProjectWithPart(project, part);
             if (form.ShowDialog() == DialogResult.OK)
             {
